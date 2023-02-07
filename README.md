@@ -56,7 +56,9 @@ elif ZScore > licdf['Mean'][21]:
 else:
     fcdf = op
 
-cp = np.insert(np.diff(fcdf), 0, fcdf[0])
-cp[-1] = max(0, cp[-1])
+    cp = np.insert(np.diff(fcdf), 0, fcdf[0])
+    cp[-1] = max(0, cp[-1])
 
-val_out = np.dot(cp, np.transpose(votes_in))
+    val_out = np.dot(cp, np.transpose(votes_in))
+    
+    return val_out
