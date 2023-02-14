@@ -1,52 +1,61 @@
-def getValueFromLookupTable(lookupTableName, outColName, valIfNan, lkpFilter, upperBoundIncl=False):
-    # Get lookup table data
-    lookupTable = StaticData.getLookupTable(lookupTableName)
-    
-    # Add double quotes for eval
-    for i in range(len(lkpFilter)):
-        lkpFilter[i]["inputVal"] = [str(x).replace("'", "''") for x in lkpFilter[i]["inputVal"]]
-    
-    # Get output column data
+import pandas as pd
+import numpy as np
+
+def getValueFromLookupTable(lookupTableName, outColName, valIfNan, lkpFilter, upperBoundIncl=0):
+    # load the lookup table as a pandas dataframe
+    lookupTable = pd.read_excel(lookupTableName, engine='openpyxl')
+
+    # add double quotes for eval
+    lkpFilter[0]['inputVal'] = [str(x).replace("'", "''") for x in lkpFilter[0]['inputVal']]
+
+    outVal = [None] * len(lkpFilter[0]['inputVal'])
+
+    # get the output column
     outColumn = lookupTable[outColName]
-    outVal = [None] * len(lkpFilter[0]["inputVal"])
-    
-    # Loop through each filter and build up the logical index
-    logicalIdx = np.ones((len(lookupTable), len(lkpFilter[0]["inputVal"])), dtype=bool)
-    for lkp in lkpFilter:
-        if "maxValField" in lkp and isinstance(lkp["maxValField"], list):
-            # Range filter
-            inputMinVal = lookupTable[lkp["minValField"][0]]
-            inputMaxVal = lookupTable[lkp["maxValField"][0]]
-            inputVal = lkp["inputVal"]
-            for iInput in range(len(inputVal)):
-                if upperBoundIncl:
-                    logicalIdx[:, iInput] &= inputMinVal < inputVal[iInput] <= inputMaxVal
+
+    logicalIdx = np.full((lookupTable.shape[0], len(lkpFilter[0]['inputVal'])), True)
+
+    # loop across the filters and build up the index vector idx by "and" 
+    for iField in range(len(lkpFilter)):
+        if 'maxValField' in lkpFilter[iField] and isinstance(lkpFilter[iField]['maxValField'], str):
+            inputMinVal = lookupTable[lkpFilter[iField]['minValField']]
+            inputMaxVal = lookupTable[lkpFilter[iField]['maxValField']]
+            inputVal = lkpFilter[iField]['inputVal']
+            for iInput in range(len(lkpFilter[0]['inputVal'])):
+                if np.nansum(upperBoundIncl):
+                    logicalIdx[:, iInput] = logicalIdx[:, iInput] & (inputMinVal < inputVal[iInput]) & (inputVal[iInput] <= inputMaxVal)
                 else:
-                    logicalIdx[:, iInput] &= inputMinVal <= inputVal[iInput] < inputMaxVal
+                    logicalIdx[:, iInput] = logicalIdx[:, iInput] & (inputMinVal <= inputVal[iInput]) & (inputVal[iInput] < inputMaxVal)
         else:
-            # Equality filter
-            inputField = lookupTable[lkp["minValField"][0]]
-            inputVal = lkp["inputVal"]
-            for iInput in range(len(inputVal)):
-                logicalIdx[:, iInput] &= np.char.equal(inputField, inputVal[iInput])
-    
-    # Apply logical index to get lookup values
-    for iInput in range(len(lkpFilter[0]["inputVal"])):
-        idx = np.argmax(logicalIdx[:, iInput])
-        lkpVal = outColumn[idx] if logicalIdx[idx, iInput] else None
+            inputField = lookupTable[lkpFilter[iField]['minValField']]
+            inputVal = lkpFilter[iField]['inputVal']
+            for iInput in range(len(lkpFilter[0]['inputVal'])):
+                logicalIdx[:, iInput] = logicalIdx[:, iInput] & (inputField.str.lower() == inputVal[iInput].lower())
 
-        if lkpVal is None:
-            lkpVal = np.nan
-        if not isinstance(lkpVal, list):
-            lkpVal = [lkpVal]
+    # apply filter
+    for iInput in range(len(lkpFilter[0]['inputVal'])):
+        idx = np.where(logicalIdx[:, iInput])[0]
+        if len(idx) > 0:
+            lkpVal = outColumn[idx[0]]
+            if pd.isna(lkpVal):
+                lkpVal = np.nan
+            outVal[iInput] = lkpVal
 
-        outVal[iInput] = lkpVal[0]
-    
-    # Apply nvl function
     outVal = nvl(outVal, valIfNan)
-    
-    # Convert to numpy array if all elements are numeric
     if all(isinstance(v, (int, float)) for v in outVal):
         outVal = np.array(outVal)
-    
+
     return outVal
+
+def nvl(data, newVal):
+    if newVal is None:
+        return data
+    if data is None:
+        return newVal
+    if isinstance(data, str):
+        data = [data]
+    data = np.array(data)
+    data[np.isnan(data)] = newVal
+    if all(isinstance(v, (int, float)) for v in data):
+        data = data.astype(float)
+    return data
