@@ -1,29 +1,28 @@
-def init_crr(self):
-    lookup_table = {
-        15: 8.3,
-        25: 8.2,
-        35: 8.1,
-        40: 7.2,
-        45: 7.1,
-        50: 6.2,
-        54: 6.1,
-        57: 5.3,
-        60: 5.2,
-        63: 5.1,
-        64.5: 4.3,
-        66: 4.2,
-        68: 4.1,
-        70.5: 3.3,
-        74: 3.2,
-        83: 3.1,
-        90: 2.2,
-        93: 2.1,
-        96: 1.2,
-        98: 1.1
+def initialcrr(self):
+    score_to_crr = {
+        (0, 10): 8.3,
+        (10, 25): 8.2,
+        (25, 35): 8.1,
+        (35, 45): 7.2,
+        (45, 50): 7.1,
+        (50, 54): 6.2,
+        (54, 57): 6.1,
+        (57, 60): 5.3,
+        (60, 63): 5.2,
+        (63, 65): 5.1,
+        (65, 66.5): 4.3,
+        (66.5, 68): 4.2,
+        (68, 71): 4.1,
+        (71, 73): 3.3,
+        (73, 76): 3.2,
+        (76, 81): 3.1,
+        (81, 87): 2.2,
+        (87, 96.5): 2.1,
+        (96.5, 98): 1.2,
+        (98, 99): 1.1,
+        (99, float('inf')): 0.1
     }
 
-    modelscore = self.Modelscore
-    if modelscore in lookup_table:
-        return lookup_table[modelscore]
-    else:
-        return 0.1
+    for score_range, crr in score_to_crr.items():
+        if score_range[0] <= self.Modelscore <= score_range[1]:
+            return crr
