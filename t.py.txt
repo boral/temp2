@@ -1,30 +1,44 @@
-def init_crr(self):
-    score_ranges = {
-        (0, 23): 8.3,
-        (23, 29): 8.2,
-        (29, 34): 8.1,
-        (34, 39): 7.2,
-        (39, 43): 7.1,
-        (43, 47): 6.2,
-        (47, 50): 6.1,
-        (50, 53): 5.3,
-        (53, 55): 5.2,
-        (55, 57): 5.1,
-        (57, 61): 4.3,
-        (61, 64): 4.2,
-        (64, 69): 4.1,
-        (69, 72): 3.3,
-        (72, 77): 3.2,
-        (77, 80): 3.1,
-        (80, 83): 2.2,
-        (83, 86): 2.1,
-        (86, 90): 1.2,
-        (90, 95): 1.1,
-        (95, 100): 0.1
-    }
-
-    for score_range, crr in score_ranges.items():
-        if score_range[0] < self.Modelscore <= score_range[1]:
-            return crr
-
-    return 0
+def initialcrr(self):
+    if self.Modelscore <= 10:
+        CRR = 8.3
+    elif self.Modelscore <= 25:
+        CRR = 8.2
+    elif self.Modelscore <= 35:
+        CRR = 8.1
+    elif self.Modelscore <= 45:
+        CRR = 7.2
+    elif self.Modelscore <= 50:
+        CRR = 7.1
+    elif self.Modelscore <= 54:
+        CRR = 6.2
+    elif self.Modelscore <= 57:
+        CRR = 6.1
+    elif self.Modelscore <= 60:
+        CRR = 5.3
+    elif self.Modelscore <= 63:
+        CRR = 5.2
+    elif self.Modelscore <= 65:
+        CRR = 5.1
+    elif self.Modelscore <= 66.5:
+        CRR = 4.3
+    elif self.Modelscore <= 68:
+        CRR = 4.2
+    elif self.Modelscore <= 71:
+        CRR = 4.1
+    elif self.Modelscore <= 73:
+        CRR = 3.3
+    elif self.Modelscore <= 76:
+        CRR = 3.2
+    elif self.Modelscore <= 81:
+        CRR = 3.1
+    elif self.Modelscore <= 87:
+        CRR = 2.2
+    elif self.Modelscore <= 96.5:
+        CRR = 2.1
+    elif self.Modelscore <= 98:
+        CRR = 1.2
+    elif self.Modelscore <= 99:
+        CRR = 1.1
+    else:
+        CRR = 0.1
+    return CRR
