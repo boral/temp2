@@ -1,44 +1,43 @@
 def init_crr(self):
-    if self.Modelscore <= 15:
-        CRR = 8.3
-    elif self.Modelscore <= 25:
-        CRR = 8.2
-    elif self.Modelscore <= 35:
-        CRR = 8.1
-    elif self.Modelscore <= 40:
-        CRR = 7.2
-    elif self.Modelscore <= 45:
-        CRR = 7.1
-    elif self.Modelscore <= 50:
-        CRR = 6.2
-    elif self.Modelscore <= 54:
-        CRR = 6.1
-    elif self.Modelscore <= 57:
-        CRR = 5.3
-    elif self.Modelscore <= 60:
-        CRR = 5.2
-    elif self.Modelscore <= 63:
-        CRR = 5.1
-    elif self.Modelscore <= 64.5:
-        CRR = 4.3
-    elif self.Modelscore <= 66:
-        CRR = 4.2
-    elif self.Modelscore <= 68:
-        CRR = 4.1
-    elif self.Modelscore <= 70.5:
-        CRR = 3.3
-    elif self.Modelscore <= 74:
-        CRR = 3.2
-    elif self.Modelscore <= 83:
-        CRR = 3.1
-    elif self.Modelscore <= 90:
-        CRR = 2.2
-    elif self.Modelscore <= 93:
-        CRR = 2.1
-    elif self.Modelscore <= 96:
-        CRR = 1.2
-    elif self.Modelscore <= 98:
-        CRR = 1.1
-    else:
-        CRR = 0.1
-    return CRR
+    modelscore = self.Modelscore
+    if modelscore <= 15:
+        return 8.3
+    if modelscore <= 25:
+        return 8.2
+    if modelscore <= 35:
+        return 8.1
+    if modelscore <= 40:
+        return 7.2
+    if modelscore <= 45:
+        return 7.1
+    if modelscore <= 50:
+        return 6.2
+    if modelscore <= 54:
+        return 6.1
+    if modelscore <= 57:
+        return 5.3
+    if modelscore <= 60:
+        return 5.2
+    if modelscore <= 63:
+        return 5.1
+    if modelscore <= 64.5:
+        return 4.3
+    if modelscore <= 66:
+        return 4.2
+    if modelscore <= 68:
+        return 4.1
+    if modelscore <= 70.5:
+        return 3.3
+    if modelscore <= 74:
+        return 3.2
+    if modelscore <= 83:
+        return 3.1
+    if modelscore <= 90:
+        return 2.2
+    if modelscore <= 93:
+        return 2.1
+    if modelscore <= 96:
+        return 1.2
+    if modelscore <= 98:
+        return 1.1
+    return 0.1
