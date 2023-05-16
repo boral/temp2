@@ -1,44 +1,29 @@
 def init_crr(self):
+    lookup_table = {
+        15: 8.3,
+        25: 8.2,
+        35: 8.1,
+        40: 7.2,
+        45: 7.1,
+        50: 6.2,
+        54: 6.1,
+        57: 5.3,
+        60: 5.2,
+        63: 5.1,
+        64.5: 4.3,
+        66: 4.2,
+        68: 4.1,
+        70.5: 3.3,
+        74: 3.2,
+        83: 3.1,
+        90: 2.2,
+        93: 2.1,
+        96: 1.2,
+        98: 1.1
+    }
+
     modelscore = self.Modelscore
-    if modelscore <= 15:
-        return 8.3
-    elif modelscore <= 25:
-        return 8.2
-    elif modelscore <= 35:
-        return 8.1
-    elif modelscore <= 40:
-        return 7.2
-    elif modelscore <= 45:
-        return 7.1
-    elif modelscore <= 50:
-        return 6.2
-    elif modelscore <= 54:
-        return 6.1
-    elif modelscore <= 57:
-        return 5.3
-    elif modelscore <= 60:
-        return 5.2
-    elif modelscore <= 63:
-        return 5.1
-    elif modelscore <= 64.5:
-        return 4.3
-    elif modelscore <= 66:
-        return 4.2
-    elif modelscore <= 68:
-        return 4.1
-    elif modelscore <= 70.5:
-        return 3.3
-    elif modelscore <= 74:
-        return 3.2
-    elif modelscore <= 83:
-        return 3.1
-    elif modelscore <= 90:
-        return 2.2
-    elif modelscore <= 93:
-        return 2.1
-    elif modelscore <= 96:
-        return 1.2
-    elif modelscore <= 98:
-        return 1.1
+    if modelscore in lookup_table:
+        return lookup_table[modelscore]
     else:
         return 0.1
