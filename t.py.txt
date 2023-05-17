@@ -1,36 +1,41 @@
-field_mapping = {
-    "SITE_PREPARATION_REQUIREMENTS": "self.SITE_PREPARATION_REQUIREMENTS",
-    "STRUCTURE_COMPLEXITY": "self.STRUCTURE_COMPLEXITY",
-    "PERFORMANCE_RISK": "self.PERFORMANCE_RISK",
-    "CONSTRUCTION_CONSTRAINTS_RISK": "self.CONSTRUCTION_CONSTRAINTS_RISK",
-    "CERTA_OF_EQUIT_SUBSC_ARRAN": "self.CERTA_OF_EQUIT_SUBSC_ARRAN",
-    "AMOUN_OF_COST_SCHED_OVERR_SUPPO": "self.AMOUN_OF_COST_SCHED_OVERR_SUPPO",
-    "CREDI_QUALI_OF_SUPPO": "self.CREDI_QUALI_OF_SUPPO",
-    "TRACK_RECOR_OF_SPONS_MANAG": "self.TRACK_RECOR_OF_SPONS_MANAG",
-    "WILLI_OF_SUPPO_TO_THE_PROJE": "self.WILLI_OF_SUPPO_TO_THE_PROJE",
-    "TRACK_RECOR_OF_CONTR": "self.TRACK_RECOR_OF_CONTR",
-    "CREDI_QUALI_OF_CONTR": "self.CREDI_QUALI_OF_CONTR",
-    "EASE_OF_REPLA_OF_CONST": "self.EASE_OF_REPLA_OF_CONST",
-    "TRANS_STRUC_AND_SECUR": "self.TRANS_STRUC_AND_SECUR",
-    "TERMINATION_BUYOUT": "self.TERMINATION_BUYOUT",
-    "CERTAINTY_OF_COSTS": "self.CERTAINTY_OF_COSTS",
-    "PROJE_ON_PROJE_AND_EXTER_DEPEN": "self.PROJE_ON_PROJE_AND_EXTER_DEPEN",
-    "IS_GUARANTEE_APPLICABLE": "self.IS_GUARANTEE_APPLICABLE",
-    "PROJECT_PHASE": "self.PROJECT_PHASE",
-    "RESTRICTIVE_COVENANTS": "self.RESTRICTIVE_COVENANTS",
-    "SUFFI_OF_CONTI_AND_WORKI_CAP": "self.SUFFI_OF_CONTI_AND_WORKI_CAP",
-    "REVENUE_AVAILABILITY": "self.REVENUE_AVAILABILITY",
-    "OFFTAKER_RISK": "self.OFFTAKER_RISK",
-    "RIGHTS_ON_DEFAULT": "self.RIGHTS_ON_DEFAULT",
-    "TERMINATION_PROVISIONS": "self.TERMINATION_PROVISIONS",
-    "SECURITY_STRUCTURE": "self.SECURITY_STRUCTURE",
-    "STEP_IN_RIGHTS": "self.STEP_IN_RIGHTS"
-}
+def get_value_in_range(value, ranges, default):
+    for range_value, result in ranges:
+        if value < range_value:
+            return result
+    return default
 
-for obj in data1:
-    if "fieldName" in obj:
-        fieldname = obj["fieldName"]
-        if fieldname in field_mapping:
-            exec(field_mapping[fieldname] + " = obj['value']")
-    if fieldname == "PROJECT_PHASE":
-        self.pnum = 1 if self.PROJECT_PHASE == "Construction" else np.nan
+# Simplified code for self.AVERAGE_DSCRM
+average_dscr_ranges = [
+    (1.2, 0),
+    (1.35, 1.2),
+    (1.7, 1.35),
+    (2.4, 1.7),
+    (3.5, 2.4),
+]
+self.AVERAGE_DSCRM = get_value_in_range(self.average_dscr, average_dscr_ranges, 3.5)
+
+# Simplified code for self.AVERAGE_DSCRC
+average_dscr_c_ranges = [
+    (1.11, 0),
+    (1.21, 1.11),
+    (1.41, 1.21),
+    (2.11, 1.41),
+    (3.01, 2.11),
+]
+self.AVERAGE_DSCRC = get_value_in_range(self.average_dscr, average_dscr_c_ranges, 3.01)
+
+# Simplified code for self.STRESSED_MINIMUM_DSCR
+stress_min_ranges = [
+    (1.05, 0),
+    (1.1, 1.05),
+    (1.15, 1.1),
+    (1.2, 1.15),
+    (1.25, 1.2),
+]
+self.STRESSED_MINIMUM_DSCR = get_value_in_range(self.stress_min, stress_min_ranges, 1.25)
+
+# Update self.average_dscr based on PROJECT_TYPE
+if self.PROJECT_TYPE == "Merchant":
+    self.average_dscr = str(self.AVERAGE_DSCRM)
+elif self.PROJECT_TYPE == "Fully_Contracted":
+    self.average_dscr = str(self.AVERAGE_DSCRC)
