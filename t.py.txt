@@ -1,13 +1,16 @@
-if 0 <= STRESSED_MINIMUM_DSCR < 1:
-    self.STRESSED_MINIMUM_DSCR = 0
+if 0 <= AVERAGE_DSCR < 1.21:
+    self.AVERAGE_DSCRM = 0
 else:
-    if 1 <= STRESSED_MINIMUM_DSCR < 1.05:
-        self.STRESSED_MINIMUM_DSCR = 1
+    if 1.21 <= AVERAGE_DSCR < 1.41:
+        self.AVERAGE_DSCRM = 1.21
     else:
-        if 1.05 <= STRESSED_MINIMUM_DSCR < 1.1:
-            self.STRESSED_MINIMUM_DSCR = 1.05
+        if 1.41 <= AVERAGE_DSCR < 1.81:
+            self.AVERAGE_DSCRM = 1.41
         else:
-            if 1.1 <= STRESSED_MINIMUM_DSCR < 1.16:
-                self.STRESSED_MINIMUM_DSCR = 1.1
+            if 1.81 <= AVERAGE_DSCR < 2.21:
+                self.AVERAGE_DSCRM = 1.81
             else:
-                self.STRESSED_MINIMUM_DSCR = 1.16
+                if 2.21 <= AVERAGE_DSCR < 4.01:
+                    self.AVERAGE_DSCRM = 2.21
+                else:
+                    self.AVERAGE_DSCRM = 4.01
