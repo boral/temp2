@@ -1,10 +1,12 @@
-if 0 <= STRES_LOAN_LIFE_COVER_RATIO <= 1.06:
-    self.STRES_LOAN_LIFE_COVER_RATIO = 0
+if 0 <= AVERAGE_DSCR < 1.11:
+    self.AVERAGE_DSCRC = 0
+elif 1.11 <= AVERAGE_DSCR < 1.21:
+    self.AVERAGE_DSCRC = 1.11
+elif 1.21 <= AVERAGE_DSCR < 1.41:
+    self.AVERAGE_DSCRC = 1.21
+elif 1.41 <= AVERAGE_DSCR < 1.91:
+    self.AVERAGE_DSCRC = 1.41
+elif 1.91 <= AVERAGE_DSCR < 3.51:
+    self.AVERAGE_DSCRC = 1.91
 else:
-    if 1.06 <= STRES_LOAN_LIFE_COVER_RATIO < 1.21:
-        self.STRES_LOAN_LIFE_COVER_RATIO = 1.06
-    else:
-        if 1.21 <= STRES_LOAN_LIFE_COVER_RATIO < 1.5000001:
-            self.STRES_LOAN_LIFE_COVER_RATIO = 1.21
-        else:
-            self.STRES_LOAN_LIFE_COVER_RATIO = 1.5000001
+    self.AVERAGE_DSCRC = 3.51
