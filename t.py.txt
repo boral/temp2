@@ -4,37 +4,26 @@ def get_value_in_range(value, ranges, default):
             return result
     return default
 
-# Simplified code for self.AVERAGE_DSCRM
-average_dscr_ranges = [
-    (1.2, 0),
-    (1.35, 1.2),
-    (1.7, 1.35),
-    (2.4, 1.7),
-    (3.5, 2.4),
+average_dscr_thresholds = [
+    (0, 0),
+    (1.2, 1.2),
+    (1.35, 1.35),
+    (1.7, 1.7),
+    (2.4, 2.4),
+    (3.5, 3.5)
 ]
-self.AVERAGE_DSCRM = get_value_in_range(self.average_dscr, average_dscr_ranges, 3.5)
+self.AVERAGE_DSCRM = get_value_in_range(self.average_dscr, average_dscr_thresholds, 3.5)
 
-# Simplified code for self.AVERAGE_DSCRC
-average_dscr_c_ranges = [
-    (1.11, 0),
-    (1.21, 1.11),
-    (1.41, 1.21),
-    (2.11, 1.41),
-    (3.01, 2.11),
+average_dscr_c_thresholds = [
+    (0, 0),
+    (1.11, 1.11),
+    (1.21, 1.21),
+    (1.41, 1.41),
+    (2.11, 2.11),
+    (3.01, 3.01)
 ]
-self.AVERAGE_DSCRC = get_value_in_range(self.average_dscr, average_dscr_c_ranges, 3.01)
+self.AVERAGE_DSCRC = get_value_in_range(self.average_dscr, average_dscr_c_thresholds, 3.01)
 
-# Simplified code for self.STRESSED_MINIMUM_DSCR
-stress_min_ranges = [
-    (1.05, 0),
-    (1.1, 1.05),
-    (1.15, 1.1),
-    (1.2, 1.15),
-    (1.25, 1.2),
-]
-self.STRESSED_MINIMUM_DSCR = get_value_in_range(self.stress_min, stress_min_ranges, 1.25)
-
-# Update self.average_dscr based on PROJECT_TYPE
 if self.PROJECT_TYPE == "Merchant":
     self.average_dscr = str(self.AVERAGE_DSCRM)
 elif self.PROJECT_TYPE == "Fully_Contracted":
