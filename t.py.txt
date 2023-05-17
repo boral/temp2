@@ -1,1 +1,7 @@
-self.ACTUA_PRICE_LTM_BREAK_EVEN_PRICE = 0 if ACTUA_PRICE_LTM_BREAK_EVEN_PRICE <= 1.5 else 1.5 if ACTUA_PRICE_LTM_BREAK_EVEN_PRICE < 2 else 2
+thresholds = [0, 1.11, 1.21, 1.41, 1.91, 3.51]
+values = [0, 1.11, 1.21, 1.41, 1.91, 3.51]
+
+for i in range(len(thresholds) - 1):
+    if thresholds[i] <= AVERAGE_DSCR < thresholds[i + 1]:
+        self.AVERAGE_DSCR = values[i]
+        break
