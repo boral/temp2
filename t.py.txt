@@ -1,7 +1,5 @@
 thresholds = [0, 1.11, 1.21, 1.41, 1.91, 3.51]
 values = [0, 1.11, 1.21, 1.41, 1.91, 3.51]
 
-for i in range(len(thresholds) - 1):
-    if thresholds[i] <= AVERAGE_DSCR < thresholds[i + 1]:
-        self.AVERAGE_DSCR = values[i]
-        break
+index = next((i for i in range(len(thresholds) - 1) if thresholds[i] <= AVERAGE_DSCR < thresholds[i + 1]), len(thresholds) - 1)
+self.AVERAGE_DSCR = values[index]
