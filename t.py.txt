@@ -1,7 +1,13 @@
-if ACTUA_PRICE_LTM_BREAK_EVEN_PRICE <= 1.5:
-    self.ACTUA_PRICE_LTM_BREAK_EVEN_PRICE = 0
+if 0 <= STRESSED_MINIMUM_DSCR < 1:
+    self.STRESSED_MINIMUM_DSCR = 0
 else:
-    if ACTUA_PRICE_LTM_BREAK_EVEN_PRICE < 2:
-        self.ACTUA_PRICE_LTM_BREAK_EVEN_PRICE = 1.5
+    if 1 <= STRESSED_MINIMUM_DSCR < 1.05:
+        self.STRESSED_MINIMUM_DSCR = 1
     else:
-        self.ACTUA_PRICE_LTM_BREAK_EVEN_PRICE = 2
+        if 1.05 <= STRESSED_MINIMUM_DSCR < 1.1:
+            self.STRESSED_MINIMUM_DSCR = 1.05
+        else:
+            if 1.1 <= STRESSED_MINIMUM_DSCR < 1.16:
+                self.STRESSED_MINIMUM_DSCR = 1.1
+            else:
+                self.STRESSED_MINIMUM_DSCR = 1.16
