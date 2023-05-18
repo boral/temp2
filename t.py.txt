@@ -1,30 +1,14 @@
-def get_value_in_range(value, ranges, default):
-    for range_value, result in ranges:
-        if value < range_value:
-            return result
-    return default
+self.STRESSED_MINIMUM_DSCR = str(
+    next(
+        filter(
+            lambda item: item[0] <= self.stress_min <= item[1][0],
+            stress.items()
+        ),
+        None
+    )
+)[1]
 
-average_dscr_thresholds = [
-    (0, 0),
-    (1.2, 1.2),
-    (1.35, 1.35),
-    (1.7, 1.7),
-    (2.4, 2.4),
-    (3.5, 3.5)
-]
-self.AVERAGE_DSCRM = get_value_in_range(self.average_dscr, average_dscr_thresholds, 3.5)
-
-average_dscr_c_thresholds = [
-    (0, 0),
-    (1.11, 1.11),
-    (1.21, 1.21),
-    (1.41, 1.41),
-    (2.11, 2.11),
-    (3.01, 3.01)
-]
-self.AVERAGE_DSCRC = get_value_in_range(self.average_dscr, average_dscr_c_thresholds, 3.01)
-
-if self.PROJECT_TYPE == "Merchant":
-    self.average_dscr = str(self.AVERAGE_DSCRM)
-elif self.PROJECT_TYPE == "Fully_Contracted":
-    self.average_dscr = str(self.AVERAGE_DSCRC)
+self.AVERAGE_DSCRM = next(
+    (dscr for range_start, range_end, dscr in dscrm if range_start <= self.average_dscr < range_end),
+    None
+)
