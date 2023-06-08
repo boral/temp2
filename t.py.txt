@@ -1,14 +1,39 @@
-self.STRESSED_MINIMUM_DSCR = str(
-    next(
-        filter(
-            lambda item: item[0] <= self.stress_min <= item[1][0],
-            stress.items()
-        ),
-        None
-    )
-)[1]
+import json
 
-self.AVERAGE_DSCRM = next(
-    (dscr for range_start, range_end, dscr in dscrm if range_start <= self.average_dscr < range_end),
-    None
-)
+def remove_duplicate_keys(json_obj):
+    unique_keys = set()
+    result = {}
+
+    def _remove_duplicate_keys(obj):
+        if isinstance(obj, dict):
+            obj = obj.copy()  # Create a copy of the dictionary to iterate over
+
+            for key, value in obj.items():
+                if key not in unique_keys:
+                    unique_keys.add(key)
+                    result[key] = _remove_duplicate_keys(value)
+
+        elif isinstance(obj, list):
+            obj = [_remove_duplicate_keys(item) for item in obj]
+
+        return obj
+
+    return _remove_duplicate_keys(json_obj)
+
+# Example usage
+json_data = '''
+{
+  "name": "John",
+  "age": 30,
+  "name": "Alice",
+  "occupation": "Engineer",
+  "age": 25
+}
+'''
+
+json_obj = json.loads(json_data)
+cleaned_json = remove_duplicate_keys(json_obj)
+
+# Convert the cleaned JSON object back to a string
+cleaned_json_str = json.dumps(cleaned_json, indent=2)
+print(cleaned_json_str)
