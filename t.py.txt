@@ -1,22 +1,25 @@
-import numpy as np
-
 def getAllocArray(mapping, facIDs, secIDs):
-    # Calculate the allocation table between facilities and securities
-    # TO DO: This now accepts input data with facilities, we must ensure that the
-    # order of securities in the returned array makes sense
-    # TO DO: Check how this will behave for a case with a facility to which no
-    # securities are allocated.
-
-    allocArray = np.zeros((len(facIDs), len(secIDs)), dtype=bool)
-    mappingFacilities = list(mapping.keys())
-
-    for iRow in range(len(mappingFacilities)):
-        fID = mappingFacilities[iRow]
-        row = facIDs.index(fID)
-        sIDs = mapping[fID]
-        for iSec in range(len(sIDs)):
-            col = secIDs.index(sIDs[iSec])
-            allocArray[row, col] = True
-
-    aa = FlowValueHolder(allocArray)
-    return aa
+    """
+    Calculate the allocation table between facilities and securities.
+    """
+    # Initialize allocation array with False values
+    allocArray = [[False] * len(secIDs) for _ in range(len(facIDs))]
+    
+    # Convert facility IDs to identifiers
+    facIDs = [asIdentifier(facID) for facID in facIDs]
+    
+    # Iterate over mapping facilities
+    for fID in mapping:
+        # Check if facility ID is in the list of input facility IDs
+        if asIdentifier(fID) in facIDs:
+            # Get the row index for the facility ID
+            row = facIDs.index(asIdentifier(fID))
+            # Iterate over security IDs for the facility
+            for sID in mapping[fID]:
+                # Get the column index for the security ID
+                col = secIDs.index(sID)
+                # Set the corresponding element in the allocation array to True
+                allocArray[row][col] = True
+    
+    # Return the allocation array as a FlowValueHolder object
+    return FlowValueHolder(allocArray)
