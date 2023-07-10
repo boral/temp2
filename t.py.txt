@@ -1,14 +1,17 @@
-import re
-
-def asIdentifier(id):
+class FlowValueHolder(IFactorValue):
     """
-    Makes a valid identifier from a string.
+    Allows passing values between factors. With this, we avoid exposing the shape of arrays.
     """
-    # Replace all non-alphanumeric characters with underscores
-    id = re.sub(r'\W|^(?=\d)', '_', id)
+    def __init__(self, val=None):
+        self.value = val
     
-    # Remove leading and trailing underscores
-    id = id.strip('_')
+    def set(self, val):
+        self.value = val
     
-    # Return the modified string
-    return id
+    def isNanUndefBlank(self):
+        if isinstance(self.value, list):
+            return any([any([isinstance(v, float) and math.isnan(v) for v in row]) for row in self.value])
+        elif isinstance(self.value, np.ndarray):
+            return np.isnan(self.value).any()
+        else:
+            return False
