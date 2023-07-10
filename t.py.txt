@@ -1,39 +1,31 @@
-import json
+import re
 
-def remove_duplicate_keys(json_obj):
-    unique_keys = set()
-    result = {}
+def asIdentifier(id):
+    # Makes a valid identifier from a string
+    # Detailed explanation goes here
+    id = re.sub('\W|^(?=\d)', '_', id)
+    return id
 
-    def _remove_duplicate_keys(obj):
-        if isinstance(obj, dict):
-            obj = obj.copy()  # Create a copy of the dictionary to iterate over
+import numpy as np
 
-            for key, value in obj.items():
-                if key not in unique_keys:
-                    unique_keys.add(key)
-                    result[key] = _remove_duplicate_keys(value)
+def getAllocArray(mapping, facIDs, secIDs):
+    # Calculate the allocation table between facilities and securities
+    # TO DO: This now accept input data with facilities, we must ensure that the
+    # order of securities in returned array make sense
+    # TO DO: Check how this will behave for a case with facility to which no
+    # securities are allocated.
 
-        elif isinstance(obj, list):
-            obj = [_remove_duplicate_keys(item) for item in obj]
+    allocArray = np.zeros((len(facIDs), len(secIDs)), dtype=bool)
+    mappingFacilities = list(mapping.keys())
+    facIDs = asIdentifier(facIDs)
 
-        return obj
+    for iRow in range(len(mappingFacilities)):
+        fID = mappingFacilities[iRow]
+        row = np.where(facIDs == fID)[0]
+        sIDs = mapping[fID]
+        for iSec in range(len(sIDs)):
+            col = np.where(secIDs == sIDs[iSec])[0]
+            allocArray[row, col] = True
 
-    return _remove_duplicate_keys(json_obj)
-
-# Example usage
-json_data = '''
-{
-  "name": "John",
-  "age": 30,
-  "name": "Alice",
-  "occupation": "Engineer",
-  "age": 25
-}
-'''
-
-json_obj = json.loads(json_data)
-cleaned_json = remove_duplicate_keys(json_obj)
-
-# Convert the cleaned JSON object back to a string
-cleaned_json_str = json.dumps(cleaned_json, indent=2)
-print(cleaned_json_str)
+    aa = FlowValueHolder(allocArray)
+    return aa
