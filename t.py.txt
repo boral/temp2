@@ -1,25 +1,14 @@
-def getAllocArray(mapping, facIDs, secIDs):
+import re
+
+def asIdentifier(id):
     """
-    Calculate the allocation table between facilities and securities.
+    Makes a valid identifier from a string.
     """
-    # Initialize allocation array with False values
-    allocArray = [[False] * len(secIDs) for _ in range(len(facIDs))]
+    # Replace all non-alphanumeric characters with underscores
+    id = re.sub(r'\W|^(?=\d)', '_', id)
     
-    # Convert facility IDs to identifiers
-    facIDs = [asIdentifier(facID) for facID in facIDs]
+    # Remove leading and trailing underscores
+    id = id.strip('_')
     
-    # Iterate over mapping facilities
-    for fID in mapping:
-        # Check if facility ID is in the list of input facility IDs
-        if asIdentifier(fID) in facIDs:
-            # Get the row index for the facility ID
-            row = facIDs.index(asIdentifier(fID))
-            # Iterate over security IDs for the facility
-            for sID in mapping[fID]:
-                # Get the column index for the security ID
-                col = secIDs.index(sID)
-                # Set the corresponding element in the allocation array to True
-                allocArray[row][col] = True
-    
-    # Return the allocation array as a FlowValueHolder object
-    return FlowValueHolder(allocArray)
+    # Return the modified string
+    return id
