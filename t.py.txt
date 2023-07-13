@@ -1,17 +1,10 @@
-class FlowValueHolder(IFactorValue):
-    """
-    Allows passing values between factors. With this, we avoid exposing the shape of arrays.
-    """
-    def __init__(self, val=None):
-        self.value = val
-    
-    def set(self, val):
-        self.value = val
-    
-    def isNanUndefBlank(self):
-        if isinstance(self.value, list):
-            return any([any([isinstance(v, float) and math.isnan(v) for v in row]) for row in self.value])
-        elif isinstance(self.value, np.ndarray):
-            return np.isnan(self.value).any()
-        else:
-            return False
+import datetime
+
+def excel_to_python(x2, y2):
+    today = datetime.date.today()
+    x2 = today if x2 == "" else x2
+    result = (y2 - x2).days / 365.25
+    result = min(result, 5)
+    result = max(result, 1)
+    return result
+
