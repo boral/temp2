@@ -1,10 +1,16 @@
-import datetime
+import numpy as np
 
-def excel_to_python(x2, y2):
-    today = datetime.date.today()
-    x2 = today if x2 == "" else x2
-    result = (y2 - x2).days / 365.25
-    result = min(result, 5)
-    result = max(result, 1)
-    return result
-
+def getAllocArray(mapping, facIDs, secIDs):
+    allocArray = np.zeros((len(facIDs), len(secIDs)), dtype=bool)
+    mappingFacilities = list(mapping.keys())
+    facIDs = [str(facID) for facID in facIDs]
+    
+    for fID in mappingFacilities:
+        row = [facID == fID for facID in facIDs]
+        sIDs = mapping[fID]
+        
+        for sID in sIDs:
+            col = [secID == sID for secID in secIDs]
+            allocArray[row, col] = True
+    
+    return allocArray
