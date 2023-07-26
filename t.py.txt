@@ -1,16 +1,9 @@
 import numpy as np
 
-def getAllocArray(mapping, facIDs, secIDs):
-    allocArray = np.zeros((len(facIDs), len(secIDs)), dtype=bool)
-    mappingFacilities = list(mapping.keys())
-    facIDs = [str(facID) for facID in facIDs]
-    
-    for fID in mappingFacilities:
-        row = [facID == fID for facID in facIDs]
-        sIDs = mapping[fID]
-        
-        for sID in sIDs:
-            col = [secID == sID for secID in secIDs]
-            allocArray[row, col] = True
-    
-    return allocArray
+securityfilter = np.array([1, 0, 0, 0, 1])
+associationarray = np.array([[False, False, False, False, False],
+                             [False, False, True, True, True],
+                             [False, False, False, False, False]])
+validocrr = np.array([[True, True, True, False, False]])
+
+haveecagaurantee = ((associationarray * securityfilter) > 0) * np.sum((1 * validocrr * associationarray), axis=1)
