@@ -10,6 +10,9 @@ validocrr = np.array([[True, True, True, False, False]])
 associationarray = associationarray.astype(int)
 validocrr = validocrr.astype(int)
 
+# Reshape securityfilter to match the shape of associationarray
+securityfilter = securityfilter.reshape(-1, 1)
+
 # Perform the operations
 haveecagaurantee = ((associationarray * securityfilter) > 0) * np.sum((1 * validocrr * associationarray), 1)
 
