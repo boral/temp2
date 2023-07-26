@@ -6,4 +6,11 @@ associationarray = np.array([[False, False, False, False, False],
                              [False, False, False, False, False]])
 validocrr = np.array([[True, True, True, False, False]])
 
-haveecagaurantee = ((associationarray * securityfilter) > 0) * np.sum((1 * validocrr * associationarray), axis=1)
+# Convert False to 0 and True to 1 for array operations
+associationarray = associationarray.astype(int)
+validocrr = validocrr.astype(int)
+
+# Perform the operations
+haveecagaurantee = ((associationarray * securityfilter) > 0) * np.sum((1 * validocrr * associationarray), 1)
+
+print(haveecagaurantee)
