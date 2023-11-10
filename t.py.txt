@@ -1,14 +1,16 @@
 import numpy as np
 import scipy.stats
 from scipy.optimize import brentq
+from multiprocessing import Pool
+import pandas as pd
 
 class PT_variN:
     def __init__(self, df, rho, theta):
-        self.N = df['Obligors'].tolist()
+        self.N = df['Obligors'].to_numpy()  # Convert 'Obligors' column to a NumPy array
         self.T = len(self.N)
         self.rho = rho
         self.theta = theta
-        self.Nmax = max(self.N)
+        self.Nmax = np.max(self.N)
         self.rng = np.random.default_rng()
         self.mu = np.zeros(self.T)
         self.sigma = self._calculate_sigma()
@@ -24,9 +26,9 @@ class PT_variN:
         ideosyncratic_full_box = self.rng.normal(size=(self.Nmax, self.T))
         systematic_box = np.array([self.rng.multivariate_normal(self.mu, self.sigma, 1)[0]] * self.Nmax)
         
-        for j, k in enumerate(self.N):
-            ideosyncratic_full_box[k:, j] = np.nan
-            systematic_box[k:, j] = np.nan
+        idx = np.arange(self.Nmax)[:, None] >= self.N
+        ideosyncratic_full_box[idx] = np.nan
+        systematic_box[idx] = np.nan
 
         asset_return = np.sqrt(self.rho) * systematic_box + np.sqrt(1 - self.rho) * ideosyncratic_full_box
         asset_return[np.isnan(asset_return)] = 99999
@@ -34,7 +36,13 @@ class PT_variN:
         return defaults.sum()
 
     def simulation(self, PD, num_simulation):
-        return np.array([self.sum_of_defaults(PD) for _ in range(num_simulation)])
+        def single_simulation(_):
+            return self.sum_of_defaults(PD)
+
+        with Pool() as pool:
+            results = pool.map(single_simulation, range(num_simulation))
+
+        return np.array(results)
 
     def obj_func(self, PD, num_simulation, N_defaults, confidence_level):
         alpha = 1 - np.mean(self.simulation(PD, num_simulation) <= N_defaults)
@@ -42,3 +50,19 @@ class PT_variN:
 
     def calculate_pd(self, num_simulation, N_defaults, confidence_level):
         return brentq(self.obj_func, a=1e-7, b=1 - 1e-7, args=(num_simulation, N_defaults, confidence_level))
+
+# Example Usage
+data = {
+    'Obligors': [10, 8, 15, 7, 20]  # Example Obligors list
+}
+df = pd.DataFrame(data)
+
+rho = 0.5
+theta = 0.8
+num_simulation = 1000
+N_defaults = 5
+confidence_level = 0.95
+
+pt_instance = PT_variN(df, rho, theta)
+calculated_pd = pt_instance.calculate_pd(num_simulation, N_defaults, confidence_level)
+print("Calculated PD:", calculated_pd)
