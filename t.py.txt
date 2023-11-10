@@ -1,124 +1,44 @@
 import numpy as np
+import scipy.stats
+from scipy.optimize import brentq
 
-def as_cell_struct(data):
-    if not isinstance(data, list):
-        data = [x for x in np.nditer(data)]
-    return data
--------------
-import pandas as pd
-import numpy as np
+class PT_variN:
+    def __init__(self, N, T, rho, theta):
+        self.N = N
+        self.T = T
+        self.rho = rho
+        self.theta = theta
+        self.Nmax = max(self.N)
+        self.rng = np.random.default_rng()
+        self.mu = np.zeros(self.T)
+        self.sigma = self._calculate_sigma()
 
-def getValueFromLookupTable(lookup_table_name, out_col_name, val_if_nan, lkp_filter, upper_bound_incl=0):
-    # Load the lookup table (assuming it's a CSV file)
-    lookup_table = pd.read_csv(lookup_table_name)
+    def _calculate_sigma(self):
+        sigma = np.zeros((self.T, self.T))
+        for i in range(self.T):
+            for j in range(self.T):
+                sigma[i][j] = np.power(self.theta, abs(i - j))
+        return sigma
 
-    # Add double quotes for eval
-    lkp_filter[0]['inputVal'] = [str(x).replace("'", "''") for x in lkp_filter[0]['inputVal']]
-    out_val = [None] * len(lkp_filter[0]['inputVal'])
+    def sum_of_defaults(self, PD):
+        ideosyncratic_full_box = self.rng.normal(size=(self.Nmax, self.T))
+        systematic_box = np.array([self.rng.multivariate_normal(self.mu, self.sigma, 1)[0]] * self.Nmax)
+        
+        for j, k in enumerate(self.N):
+            ideosyncratic_full_box[k:, j] = np.nan
+            systematic_box[k:, j] = np.nan
 
-    # First, get the output column
-    out_column = lookup_table[out_col_name]
+        asset_return = np.sqrt(self.rho) * systematic_box + np.sqrt(1 - self.rho) * ideosyncratic_full_box
+        asset_return[np.isnan(asset_return)] = 99999
+        defaults = asset_return < scipy.stats.norm.ppf(PD)
+        return defaults.sum()
 
-    logical_idx = np.ones((len(lookup_table), len(lkp_filter[0]['inputVal'])), dtype=bool)
+    def simulation(self, PD, num_simulation):
+        return np.array([self.sum_of_defaults(PD) for _ in range(num_simulation)])
 
-    # Loop across the filters and build up the index vector idx by "and"
-    for i_field in range(len(lkp_filter)):
-        if 'maxValField' in lkp_filter[i_field] and isinstance(lkp_filter[i_field]['maxValField'][0], str):
-            input_min_val = lookup_table[lkp_filter[i_field]['minValField'][0]]
-            input_max_val = lookup_table[lkp_filter[i_field]['maxValField'][0]]
-            input_val = lkp_filter[i_field]['inputVal']
-            for i_input in range(len(lkp_filter[0]['inputVal'])):
-                if np.nansum(upper_bound_incl):
-                    logical_idx[:, i_input] &= (input_min_val < input_val[i_input]) & (input_val[i_input] <= input_max_val)
-                else:
-                    logical_idx[:, i_input] &= (input_min_val <= input_val[i_input]) & (input_val[i_input] < input_max_val)
-        else:
-            input_field = lookup_table[lkp_filter[i_field]['minValField'][0]]
-            input_val = lkp_filter[i_field]['inputVal']
-            for i_input in range(len(lkp_filter[0]['inputVal'])):
-                logical_idx[:, i_input] &= input_field.str.lower() == input_val[i_input].lower()
+    def obj_func(self, PD, num_simulation, N_defaults, confidence_level):
+        alpha = 1 - np.mean(self.simulation(PD, num_simulation) <= N_defaults)
+        return alpha - confidence_level
 
-    # Now apply the filter
-    for i_input in range(len(lkp_filter[0]['inputVal'])):
-        idx = np.argmax(logical_idx[:, i_input])
-        lkp_val = out_column.iloc[idx]
-
-        if pd.isna(lkp_val):
-            lkp_val = np.nan
-        out_val[i_input] = lkp_val
-
-    out_val = [val_if_nan if pd.isna(x) else x for x in out_val]
-
-    if all(isinstance(x, (int, float)) for x in out_val):
-        out_val = np.array(out_val)
-
-    return out_val
-----------------------
-import numpy as np
-
-def nvl(data, newVal):
-    if newVal is None:
-        return
-    
-    if isinstance(data, str):
-        data = [data]
-    else:
-        data = as_cell_struct(data)
-    
-    for iData in range(len(data)):
-        if np.isnan(data[iData]):
-            data[iData] = newVal
-    
-    if all(isinstance(item, (int, float)) for item in data):
-        data = np.array(data)
-    
-    return data
-
----------------
-import numpy as np
-
-def rabl_getPeerRank(ratio_in, peerID_in, ratioName_in, peerDataTable):
-    ratio_in = ratio_in[0]  # value from the newest statement only
-    if np.isnan(ratio_in):
-        val_out = np.nan
-        return val_out
-
-    valQ1 = 0.01 * getValueFromLookupTable(peerDataTable, ratioName_in + 'Q1', 0, {'minValField': ['PeerID'], 'inputVal': [str(peerID_in)]})
-    valQ2 = 0.01 * getValueFromLookupTable(peerDataTable, ratioName_in + 'Q2', 0, {'minValField': ['PeerID'], 'inputVal': [str(peerID_in)]})
-    valQ3 = 0.01 * getValueFromLookupTable(peerDataTable, ratioName_in + 'Q3', 0, {'minValField': ['PeerID'], 'inputVal': [str(peerID_in)]})
-
-    # if q1=q2 and q1<q3 then q1-  example: 3 3 4
-    # if q1=q2 and q1>q3 then q1+  example: 4 4 3
-    # if q1=q2 and q1=q3 then q1+  example: 2 2 2
-    if valQ1 == valQ2:
-        if valQ1 < valQ3:
-            valQ1 = valQ1 * 0.99
-        else:
-            valQ1 = valQ1 * 1.01
-
-    # if q2=q3 and q1<q3 then q3+  example: 3 4 4
-    # if q2=q3 and q1>q3 then q3-  example: 4 3 3
-    # if q2=q3 and q1=q3 then q3-  example: 2 2 2
-    if valQ2 == valQ3:
-        if valQ1 < valQ3:
-            valQ3 = valQ3 * 1.01
-        else:
-            valQ3 = valQ3 * 0.99
-
-    if ratio_in > valQ2:
-        val_r = (valQ2 - ratio_in) / (max(valQ1, valQ3) - valQ2)
-    else:
-        val_r = (valQ2 - ratio_in) / (min(valQ1, valQ3) - valQ2)
-
-    # Denominator in above fractions cannot be zero:
-    if np.isnan(val_r) or np.isinf(val_r):
-        val_out = np.nan
-        return val_out
-
-    # Standard Rank:
-    if (valQ3 > valQ1 and ratio_in > valQ2) or (valQ3 < valQ1 and ratio_in < valQ2):
-        val_out = 2 ** (val_r - 1)
-    else:
-        val_out = 1 - 2 ** (val_r - 1)
-
-    return val_out
+    def calculate_pd(self, num_simulation, N_defaults, confidence_level):
+        return brentq(self.obj_func, a=1e-7, b=1 - 1e-7, args=(num_simulation, N_defaults, confidence_level))
