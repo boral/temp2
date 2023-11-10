@@ -3,9 +3,9 @@ import scipy.stats
 from scipy.optimize import brentq
 
 class PT_variN:
-    def __init__(self, N, T, rho, theta):
-        self.N = N
-        self.T = T
+    def __init__(self, df, rho, theta):
+        self.N = df['Obligors'].tolist()
+        self.T = len(self.N)
         self.rho = rho
         self.theta = theta
         self.Nmax = max(self.N)
