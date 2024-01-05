@@ -1,17 +1,22 @@
 import pandas as pd
-import statsmodels.api as sm
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
 
-# Example DataFrame creation
-df = pd.DataFrame({'y': [1, 2, 3, 4, 5],
-                   'x': [2, 4, 6, 8, 10]})
+# Sample DataFrame
+data = {'A': ['apple banana apple banana orange', 'banana orange banana orange', 'apple apple banana'],
+        'B': [10, 20, 30],
+        'C': ['x', 'y', 'z']}
+df = pd.DataFrame(data)
 
-# Regression with intercept term
-X_with_intercept = sm.add_constant(df['x'])
-model_with_intercept = sm.OLS(df['y'], X_with_intercept).fit()
-print("Regression with intercept term:")
-print(model_with_intercept.summary())
+# Function to generate word cloud
+def generate_wordcloud(text):
+    wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
 
-# Regression without intercept term
-model_without_intercept = sm.OLS(df['y'], df['x']).fit()
-print("\nRegression without intercept term:")
-print(model_without_intercept.summary())
+    plt.figure(figsize=(10, 5))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis('off')
+    plt.show()
+
+# Generate word cloud from column A
+text_column_A = ' '.join(df['A'].astype(str).tolist())
+generate_wordcloud(text_column_A)
