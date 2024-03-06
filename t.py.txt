@@ -1,22 +1,65 @@
-import pandas as pd
-from wordcloud import WordCloud
-import matplotlib.pyplot as plt
+import pyspark.pandas as ps
+from datetime import datetime, timedelta
 
-# Sample DataFrame
-data = {'A': ['apple banana apple banana orange', 'banana orange banana orange', 'apple apple banana'],
-        'B': [10, 20, 30],
-        'C': ['x', 'y', 'z']}
-df = pd.DataFrame(data)
+# Assuming your original DataFrame is named df
+# If your date column is not in datetime format, convert it first
+df['ASSESSMENT_APPROVAL_DATE'] = ps.to_datetime(df['ASSESSMENT_APPROVAL_DATE'], format='%d/%m/%Y %H:%M')
 
-# Function to generate word cloud
-def generate_wordcloud(text):
-    wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
+# Create a new DataFrame to store the transformed data
+transformed_df = ps.DataFrame(columns=['GCDU_ID', 'DATE', 'ASSESSMENT_APPROVED_CRR'])
 
-    plt.figure(figsize=(10, 5))
-    plt.imshow(wordcloud, interpolation='bilinear')
-    plt.axis('off')
-    plt.show()
+# Iterate through each row in the original DataFrame
+for index, row in df.iterrows():
+    gcd_id = row['GCDU_ID']
+    start_date = datetime(row['ASSESSMENT_APPROVAL_DATE'].year, row['ASSESSMENT_APPROVAL_DATE'].month, 1)
+    end_date = datetime(row['ASSESSMENT_APPROVAL_DATE'].year, row['ASSESSMENT_APPROVAL_DATE'].month + 1, 1) - timedelta(days=1)
 
-# Generate word cloud from column A
-text_column_A = ' '.join(df['A'].astype(str).tolist())
-generate_wordcloud(text_column_A)
+    # Generate a range of dates from start_date to end_date with a frequency of one day
+    date_range = ps.date_range(start_date, end_date, freq='D')
+
+    # Create a DataFrame with the generated dates and the corresponding assessment value
+    temp_df = ps.DataFrame({'GCDU_ID': gcd_id, 'DATE': date_range, 'ASSESSMENT_APPROVED_CRR': row['ASSESSMENT_APPROVED_CRR']})
+
+    # Append the temporary DataFrame to the transformed DataFrame
+    transformed_df = ps.concat([transformed_df, temp_df])
+
+# Sort the final DataFrame by GCDU_ID and DATE
+transformed_df = transformed_df.sort_values(by=['GCDU_ID', 'DATE']).reset_index(drop=True)
+
+# Print the final transformed DataFrame
+print(transformed_df)
+
+
+
+
+
+import pyspark.pandas as ps
+from datetime import datetime, timedelta
+
+# Assuming your original DataFrame is named df
+# If your date column is not in datetime format, convert it first
+df['ASSESSMENT_APPROVAL_DATE'] = ps.to_datetime(df['ASSESSMENT_APPROVAL_DATE'], format='%d/%m/%Y %H:%M')
+
+# Create a new DataFrame to store the transformed data
+transformed_df = ps.DataFrame(columns=['GCDU_ID', 'DATE', 'ASSESSMENT_APPROVED_CRR'])
+
+# Iterate through each row in the original DataFrame
+for index, row in df.iterrows():
+    gcd_id = row['GCDU_ID']
+    start_date = datetime(row['ASSESSMENT_APPROVAL_DATE'].year, row['ASSESSMENT_APPROVAL_DATE'].month, 1)
+    end_date = datetime(row['ASSESSMENT_APPROVAL_DATE'].year, row['ASSESSMENT_APPROVAL_DATE'].month + 1, 1) - timedelta(days=1)
+
+    # Generate a range of dates from start_date to end_date with a frequency of one day
+    date_range = ps.date_range(start_date, end_date, freq='D')
+
+    # Create a DataFrame with the generated dates and the corresponding assessment value
+    temp_df = ps.DataFrame({'GCDU_ID': gcd_id, 'DATE': date_range, 'ASSESSMENT_APPROVED_CRR': row['ASSESSMENT_APPROVED_CRR']})
+
+    # Append the temporary DataFrame to the transformed DataFrame
+    transformed_df = ps.concat([transformed_df, temp_df])
+
+# Sort the final DataFrame by GCDU_ID and DATE
+transformed_df = transformed_df.sort_values(by=['GCDU_ID', 'DATE']).reset_index(drop=True)
+
+# Print the final transformed DataFrame
+print(transformed_df)
