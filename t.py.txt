@@ -1,12 +1,12 @@
-import pyspark.pandas as ps
+import pandas as pd
 from datetime import datetime, timedelta
 
 # Assuming your original DataFrame is named df
 # If your date column is not in datetime format, convert it first
-df['ASSESSMENT_APPROVAL_DATE'] = ps.to_datetime(df['ASSESSMENT_APPROVAL_DATE'], format='%d/%m/%Y %H:%M')
+df['ASSESSMENT_APPROVAL_DATE'] = pd.to_datetime(df['ASSESSMENT_APPROVAL_DATE'], format='%d/%m/%Y %H:%M')
 
 # Create a new DataFrame to store the transformed data
-transformed_df = ps.DataFrame(columns=['GCDU_ID', 'DATE', 'ASSESSMENT_APPROVED_CRR'])
+transformed_df = pd.DataFrame(columns=['GCDU_ID', 'DATE', 'ASSESSMENT_APPROVED_CRR'])
 
 # Iterate through each row in the original DataFrame
 for index, row in df.iterrows():
@@ -15,19 +15,20 @@ for index, row in df.iterrows():
     end_date = datetime(row['ASSESSMENT_APPROVAL_DATE'].year, row['ASSESSMENT_APPROVAL_DATE'].month + 1, 1) - timedelta(days=1)
 
     # Generate a range of dates from start_date to end_date with a frequency of one day
-    date_range = ps.date_range(start_date, end_date, freq='D')
+    date_range = pd.date_range(start_date, end_date, freq='D')
 
     # Create a DataFrame with the generated dates and the corresponding assessment value
-    temp_df = ps.DataFrame({'GCDU_ID': gcd_id, 'DATE': date_range, 'ASSESSMENT_APPROVED_CRR': row['ASSESSMENT_APPROVED_CRR']})
+    temp_df = pd.DataFrame({'GCDU_ID': gcd_id, 'DATE': date_range, 'ASSESSMENT_APPROVED_CRR': row['ASSESSMENT_APPROVED_CRR']})
 
     # Append the temporary DataFrame to the transformed DataFrame
-    transformed_df = ps.concat([transformed_df, temp_df])
+    transformed_df = pd.concat([transformed_df, temp_df])
 
 # Sort the final DataFrame by GCDU_ID and DATE
 transformed_df = transformed_df.sort_values(by=['GCDU_ID', 'DATE']).reset_index(drop=True)
 
 # Print the final transformed DataFrame
 print(transformed_df)
+
 
 
 
