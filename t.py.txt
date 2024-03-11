@@ -1,2 +1,1 @@
-month_int = int(row['assessment_approval_date'].month)
-start_date = datetime(int(row['assessment_approval_date'].year), month_int, 1)
+month_int = int(row['assessment_approval_date'].month) if not pd.isnull(row['assessment_approval_date']) else 1
