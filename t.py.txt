@@ -6,7 +6,9 @@ from multiprocessing import Pool
 class PT_variN:
     def __init__(self, df, rho, theta):
         self.N = df['gcdu_id'].values
+        print("Shape of self.N:", self.N.shape)
         self.T = len(self.N)
+        print("Value of self.T:", self.T)
         self.rho = rho
         self.theta = theta
         self.Nmax = max(self.N)
