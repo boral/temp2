@@ -1,70 +1,57 @@
 import numpy as np
-import scipy.stats
+from scipy.stats import norm
 from scipy.optimize import brentq
-from multiprocessing import Pool
+from joblib import Parallel, delayed
 
 class PT_variN:
-    """
-    df: dataframe with at least one column named 'gcdu_id' and each row represent a year
-    rho: asset correlation
-    theta: intertemporal correlation
-    num_simulation: number of simulations
-    N_defaults: cumulative number of observed default
-    confidence_level: confidence level for pluto-tasche approach
-    """
     def __init__(self, df, rho, theta):
         self.N = df['gcdu_id'].values
         self.T = len(self.N)
         self.rho = rho
         self.theta = theta
         self.Nmax = np.max(self.N)
-        self.rng = np.random.default_rng()
         self.mu = np.zeros(self.T)
         self.sigma = self._calculate_sigma()
-    
+
     def _calculate_sigma(self):
-        sigma = np.zeros((self.T, self.T))
-        for i in range(self.T):
-            for j in range(self.T):
-                sigma[i][j] = np.power(self.theta, abs(i - j))
-        return sigma
-    
+        i, j = np.indices((self.T, self.T))
+        return np.power(self.theta, np.abs(i - j))
+
     def sum_of_defaults(self, PD):
-        idiosyncratic_full_box = self.rng.normal(size=(self.Nmax, self.T))
-        systematic_box = np.array([self.rng.multivariate_normal(self.mu, self.sigma, 1)[0] for _ in range(self.Nmax)])
-    
+        rng = np.random.default_rng()
+        idiosyncratic_full_box = rng.normal(size=(self.Nmax, self.T))
+        systematic_box = np.tile(rng.multivariate_normal(self.mu, self.sigma, 1), (self.Nmax, 1))
+        
         for j, k in enumerate(self.N):
             idiosyncratic_full_box[k:, j] = np.nan
             systematic_box[k:, j] = np.nan
-    
+        
         asset_return = np.sqrt(self.rho) * systematic_box + np.sqrt(1 - self.rho) * idiosyncratic_full_box
-        asset_return[np.isnan(asset_return)] = 99999
-        defaults = asset_return < scipy.stats.norm.ppf(PD)
-        return defaults.sum()
-    
+        defaults = asset_return < norm.ppf(PD)
+        return np.sum(defaults)
+
     def simulation(self, PD, num_simulation):
         return np.array([self.sum_of_defaults(PD) for _ in range(num_simulation)])
-    
+
     def obj_func(self, PD, num_simulation, N_defaults, confidence_level):
         alpha = 1 - np.mean(self.simulation(PD, num_simulation) <= N_defaults)
         return alpha - confidence_level
-    
-    def calculate_pd(self, PD, num_simulation, N_defaults, confidence_level):
-        return brentq(self.obj_func, a=1e-7, b=1 - 1e-7, args=(PD, num_simulation, N_defaults, confidence_level))
 
-def calculate_pd_wrapper(args):
-    return PT_variN(*args).calculate_pd(500, n_defaults, n_defaults, 0.85)
+    def calculate_pd(self, num_simulation, N_defaults, confidence_level):
+        return brentq(self.obj_func, a=1e-7, b=1 - 1e-7, args=(num_simulation, N_defaults, confidence_level))
 
-# Initialize empty lists to store results
-pd_data = [(lradr_data[lradr_data.cohort_month == i], 0.18, 0.7) for i in range(1, 13)]
+# Parallel simulation execution
+def simulate_and_calculate_pd(params):
+    X, PD, n_defaults, confidence_level = params
+    return X.calculate_pd(500, n_defaults, confidence_level)
 
-# Use multiprocessing Pool for parallel processing
-with Pool() as pool:
-    results = pool.map(calculate_pd_wrapper, pd_data)
+# Initialize PT_variN object for each month and simulate in parallel
+lradr_data_grouped = lradr_data.groupby('cohort_month')
+results = Parallel(n_jobs=-1)(
+    delayed(simulate_and_calculate_pd)([PT_variN(df, 0.18, 0.7), 500, n_defaults, cl])
+    for cl, (i, df) in zip([0.5, 0.85], lradr_data_grouped)
+)
 
 # Extract results
-pd_best_estimate, pd_conservative = zip(*results)
-
-# Compute final estimates
-pd_best_estimate_final = np.mean(pd_best_estimate)
-pd_conservative_final = np.mean(pd_conservative) + np.std(pd_conservative)
+pd_best_estimate_final = np.mean([res[0] for res in results])
+pd_conservative_final = np.mean([res[1] for res in results]) + np.std([res[1] for res in results])
