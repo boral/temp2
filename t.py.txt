@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.stats
 from scipy.optimize import brentq
+from multiprocessing import Pool
 
 class PT_variN:
     def __init__(self, df, rho, theta):
@@ -31,7 +32,9 @@ class PT_variN:
         return np.sum(defaults)
 
     def simulation(self, PD, num_simulation):
-        return np.array([self.sum_of_defaults(PD) for _ in range(num_simulation)])
+        with Pool() as pool:
+            results = pool.starmap(self.sum_of_defaults, [(PD,) for _ in range(num_simulation)])
+        return np.array(results)
 
     def obj_func(self, PD, num_simulation, N_defaults, confidence_level):
         alpha = 1 - np.mean(self.simulation(PD, num_simulation) <= N_defaults)
