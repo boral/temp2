@@ -29,7 +29,7 @@ class PT_variN:
         asset_return = np.sqrt(self.rho) * systematic_box + np.sqrt(1 - self.rho) * idiosyncratic_full_box
         asset_return[np.isnan(asset_return)] = 99999
         defaults = asset_return < scipy.stats.norm.ppf(PD)
-        return np.sum(defaults, axis=(0, 1))
+        return np.sum(defaults, axis=0)
 
     def obj_func(self, PD, num_simulation, N_defaults, confidence_level):
         alpha = 1 - np.mean(self.sum_of_defaults(PD, num_simulation) <= N_defaults)
