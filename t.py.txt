@@ -53,7 +53,7 @@ class PT_variN:
         return brentq(self.obj_func, a=1e-7, b=1 - 1e-7, args=(PD, num_simulation, N_defaults, confidence_level))
 
 def calculate_pd_wrapper(args):
-    return PT_variN(*args).calculate_pd(500, n_defaults, 0.50, 0.85)
+    return PT_variN(*args).calculate_pd(500, n_defaults, n_defaults, 0.85)
 
 # Initialize empty lists to store results
 pd_data = [(lradr_data[lradr_data.cohort_month == i], 0.18, 0.7) for i in range(1, 13)]
