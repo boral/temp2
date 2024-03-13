@@ -18,40 +18,41 @@ class PT_variN:
         abs_diff = np.abs(np.subtract.outer(np.arange(self.T), np.arange(self.T)))
         return np.power(self.theta, abs_diff)
 
-    def sum_of_defaults(self, PD):
-        idiosyncratic_full_box = self.rng.normal(size=(self.Nmax, self.T))
-        systematic_box = np.tile(self.rng.multivariate_normal(self.mu, self.sigma, 1), (self.Nmax, 1))
+    def sum_of_defaults(self, PD, num_simulation):
+        idiosyncratic_full_box = self.rng.normal(size=(self.Nmax, self.T, num_simulation))
+        systematic_box = np.tile(self.rng.multivariate_normal(self.mu, self.sigma, num_simulation), (self.Nmax, 1, 1))
 
-        mask = np.arange(self.Nmax)[:, None] >= self.N
+        mask = np.arange(self.Nmax)[:, None, None] >= self.N
         idiosyncratic_full_box[mask] = np.nan
         systematic_box[mask] = np.nan
 
         asset_return = np.sqrt(self.rho) * systematic_box + np.sqrt(1 - self.rho) * idiosyncratic_full_box
         asset_return[np.isnan(asset_return)] = 99999
         defaults = asset_return < scipy.stats.norm.ppf(PD)
-        return np.sum(defaults)
-
-    def simulation(self, PD, num_simulation):
-        with Pool() as pool:
-            results = pool.starmap(self.sum_of_defaults, [(PD,) for _ in range(num_simulation)])
-        return np.array(results)
+        return np.sum(defaults, axis=(0, 1))
 
     def obj_func(self, PD, num_simulation, N_defaults, confidence_level):
-        alpha = 1 - np.mean(self.simulation(PD, num_simulation) <= N_defaults)
+        alpha = 1 - np.mean(self.sum_of_defaults(PD, num_simulation) <= N_defaults)
         return alpha - confidence_level
 
     def calculate_pd(self, num_simulation, N_defaults, confidence_level):
         return brentq(self.obj_func, a=1e-7, b=1 - 1e-7, args=(num_simulation, N_defaults, confidence_level))
 
-# Initialise empty lists to store results
-pd_best_estimate = []
-pd_conservative = []
+# Define a function to calculate PDs in parallel
+def calculate_pd_parallel(month):
+    print(month)
+    X = PT_variN(df=lradr_data[lradr_data.cohort_month == month], rho=0.18, theta=0.7)
+    pd_best_estimate = X.calculate_pd(500, n_defaults, 0.50)
+    pd_conservative = X.calculate_pd(500, n_defaults, 0.85)
+    return pd_best_estimate, pd_conservative
 
-for i in range(1, 13):
-    print(i)
-    X = PT_variN(df=lradr_data[lradr_data.cohort_month == i], rho=0.18, theta=0.7)
-    pd_best_estimate.append(X.calculate_pd(500, n_defaults, 0.50))
-    pd_conservative.append(X.calculate_pd(500, n_defaults, 0.85))
+# Create a list of months
+months = list(range(1, 13))
 
-pd_best_estimate_final = np.mean(pd_best_estimate)
-pd_conservative_final = np.mean(pd_conservative) + np.std(pd_conservative)
+# Calculate PDs in parallel
+with Pool() as pool:
+    results = pool.map(calculate_pd_parallel, months)
+
+# Extract results
+pd_best_estimate_final = np.mean([result[0] for result in results])
+pd_conservative_final = np.mean([result[1] for result in results]) + np.std([result[1] for result in results])
