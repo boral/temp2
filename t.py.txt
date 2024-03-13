@@ -13,11 +13,11 @@ class PT_variN:
     confidence_level: confidence level for pluto-tasche approach
     """
     def __init__(self, df, rho, theta):
-        self.N = df['gcdu_id'].tolist()
+        self.N = df['gcdu_id'].values
         self.T = len(self.N)
         self.rho = rho
         self.theta = theta
-        self.Nmax = max(self.N)
+        self.Nmax = np.max(self.N)
         self.rng = np.random.default_rng()
         self.mu = np.zeros(self.T)
         self.sigma = self._calculate_sigma()
@@ -31,7 +31,7 @@ class PT_variN:
     
     def sum_of_defaults(self, PD):
         idiosyncratic_full_box = self.rng.normal(size=(self.Nmax, self.T))
-        systematic_box = np.array([self.rng.multivariate_normal(self.mu, self.sigma, 1)[0]] * self.Nmax)
+        systematic_box = np.array([self.rng.multivariate_normal(self.mu, self.sigma, 1)[0] for _ in range(self.Nmax)])
     
         for j, k in enumerate(self.N):
             idiosyncratic_full_box[k:, j] = np.nan
