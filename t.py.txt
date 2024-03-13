@@ -22,14 +22,14 @@ class PT_variN:
         idiosyncratic_full_box = self.rng.normal(size=(self.Nmax, self.T, num_simulation))
         systematic_box = np.tile(self.rng.multivariate_normal(self.mu, self.sigma, num_simulation), (self.Nmax, 1, 1))
 
-        mask = np.arange(self.Nmax)[:, None, None] >= self.N
-        idiosyncratic_full_box[mask] = np.nan
-        systematic_box[mask] = np.nan
+        mask = np.arange(self.Nmax)[:, None] >= self.N
+        idiosyncratic_full_box[mask, :, :] = np.nan
+        systematic_box[mask, :, :] = np.nan
 
         asset_return = np.sqrt(self.rho) * systematic_box + np.sqrt(1 - self.rho) * idiosyncratic_full_box
         asset_return[np.isnan(asset_return)] = 99999
         defaults = asset_return < scipy.stats.norm.ppf(PD)
-        return np.sum(defaults, axis=0)
+        return np.sum(defaults, axis=(0, 1))
 
     def obj_func(self, PD, num_simulation, N_defaults, confidence_level):
         alpha = 1 - np.mean(self.sum_of_defaults(PD, num_simulation) <= N_defaults)
