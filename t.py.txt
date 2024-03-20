@@ -1,69 +1,16 @@
 from joblib import Parallel, delayed
 
-class PT_variN:
-    """
-    df: dataframe with at least one column named 'gcdu_id' and each row represent a year
-    rho: asset correlation
-    theta: intertemporal correlation
-    num_simulation: number of simulations
-    N_defaults: cumulative number of observed default
-    confidence_level: confidence level for pluto-tasche approach
-    """
-    def __init__(self, df, rho, theta):
-        self.N = df['gcdu_id'].tolist()
-        self.T = len(self.N)
-        self.rho = rho
-        self.theta = theta
-        self.Nmax = max(self.N)
-        self.rng = np.random.default_rng()
-        self.mu = np.zeros(self.T)
-        self.sigma = self._calculate_sigma()
-    
-    def _calculate_sigma(self):
-        sigma = np.zeros((self.T, self.T))
-        for i in range(self.T):
-            for j in range(self.T):
-                sigma[i][j] = np.power(self.theta, abs(i - j))
-        return sigma
-    
-    def sum_of_defaults(self, PD):
-        idiosyncratic_full_box = self.rng.normal(size=(self.Nmax, self.T))
-        systematic_box = np.array([self.rng.multivariate_normal(self.mu, self.sigma, 1)[0]] * self.Nmax)
-    
-        for j, k in enumerate(self.N):
-            idiosyncratic_full_box[k:, j] = np.nan
-            systematic_box[k:, j] = np.nan
-    
-        asset_return = np.sqrt(self.rho) * systematic_box + np.sqrt(1 - self.rho) * idiosyncratic_full_box
-        asset_return[np.isnan(asset_return)] = 99999
-        defaults = asset_return < scipy.stats.norm.ppf(PD)
-        return defaults.sum()
-    
-    def simulation(self, PD, num_simulation):
-        return np.array([self.sum_of_defaults(PD) for _ in range(num_simulation)])
-    
-    def obj_func(self, PD, num_simulation, N_defaults, confidence_level):
-        alpha = 1 - np.mean(self.simulation(PD, num_simulation) <= N_defaults)
-        return alpha - confidence_level
-    
-    def calculate_pd(self, num_simulation, N_defaults, confidence_level):
-        return brentq(self.obj_func, a=1e-7, b=1 - 1e-7, args=(num_simulation, N_defaults, confidence_level))
+def process_row(i, rating_events, cohort_date_range):
+    x = rating_events.iloc[[i]]
+    end = min(x.from_index.iloc[0] + 20, x.to_index.iloc[0])
+    tmp_dates = cohort_date_range[x.from_index.iloc[0]:end]
+    x_out = pd.DataFrame(np.repeat(x.values, len(tmp_dates), axis=0), columns=x.columns)
+    x_out["cohort_date"] = tmp_dates
+    return x_out
 
-def calculate_pd_parallel(i, lradr_data, n_defaults, confidence_level):
-    X = PT_variN(df=lradr_data[lradr_data.cohort_month == i], rho=0.18, theta=0.7)
-    pd_best_estimate = X.calculate_pd(500, n_defaults, 0.50)
-    pd_conservative = X.calculate_pd(500, n_defaults, 0.85)
-    return i, pd_best_estimate, pd_conservative
+# Define the function for parallel processing
+def parallel_process(rating_events, cohort_date_range):
+    return Parallel(n_jobs=-1)(delayed(process_row)(i, rating_events, cohort_date_range) for i in range(len(rating_events)))
 
-# Number of jobs to run in parallel
-num_jobs = 4
-
-results = Parallel(n_jobs=num_jobs)(delayed(calculate_pd_parallel)(i, lradr_data, n_defaults, 0.85) for i in range(1, 13))
-
-# Extract results
-pd_best_estimate_final = np.mean([result[1] for result in results])
-pd_conservative_final = np.mean([result[2] for result in results]) + np.std([result[2] for result in results])
-
-pd_data = [{"Cohort_Month": result[0], "PD_Best_Estimate": result[1], "PD_Conservative": result[2]} for result in results]
-
-pd.DataFrame(pd_data)
+# Call the function for parallel processing
+cohort_chunks = parallel_process(rating_events, cohort_date_range)
