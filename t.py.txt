@@ -1,141 +1,63 @@
-Fund Name,Is it Hedge Fund or Private Equity or Neither one,Why you think that?
-TRINITUS DIVERSIFIED MAC FD,Hedge Fund,Diversified MAC suggests a hedge fund
-MAN AHL DVRSFD TRDNG CO LP,Hedge Fund,AHL is known for hedge fund strategies
-EUDORA INVESTMENT F ICAV-A F,Hedge Fund,Investment fund with ICAV structure
-RE LOOMIS SAYLES CR DISMS,Neither,Seems like a mutual fund
-Lux Im - Algebris Best Ideas Fund,Hedge Fund,Algebris known for hedge fund products
-MOORE EMERGING MARKETS FUND,Hedge Fund,Moore Capital is a hedge fund
-MAN AHL DVRSFD PCC LTD CLS N,Hedge Fund,AHL is known for hedge fund strategies
-SYSTRADAS RKPREM MSTFTD LTD,Neither,Not enough information
-CVI CHVF LUX SECURITIES SARL,Private Equity,SARL structure commonly used in PE
-DUET MENA OPPRTS MSTR FD LTD,Hedge Fund,Master fund suggests a hedge fund
-ATLAS ENHANCED MASTR FD LTD,Hedge Fund,Master fund suggests a hedge fund
-TX CAPITAL VALUE FUND,Hedge Fund,"Value fund, typically hedge fund"
-MOORE GLOBAL INVESTM,Hedge Fund,Moore Capital is a hedge fund
-Cerberus European RDL HDGS,Private Equity,Cerberus is a private equity firm
-PARALLAX VLTV ADV-PRLLX MF,Hedge Fund,Volatility strategies are hedge fund
-BRIDGEWATER ASSO-BW-M PA 24,Hedge Fund,Bridgewater known for hedge funds
-COMPSS MAV LIC,Neither,Not enough information
-H2O GBL STG ICAV-BRY ACT VLE,Hedge Fund,H2O known for hedge funds
-HTHK-HKC-SPARX JAP ASIA BEST PICK,Hedge Fund,Sparx is known for hedge funds
-H2o Am LLP-Toro PRS Tst-Blue,Hedge Fund,H2O known for hedge funds
-ESSENCE MNSN CHINA GRWTH FD,Hedge Fund,"Growth fund, typically hedge fund"
-TSSP ADJACENT OPP PART LP,Private Equity,TSSP known for private equity
-SC GAIA TWO SIGMA DIVRSFD,Hedge Fund,Two Sigma known for hedge funds
-EVERBRIGHT CONVERTIBLE OP FD,Hedge Fund,Convertible funds typically hedge funds
-Pentire Property Finance Limited,Neither,Not enough information
-IMPRINT THMTIC OPP OFF SCSP,Hedge Fund,Thematic opportunities suggest hedge fund
-GLOBAL INTEGRITY ALPH FD LTD,Hedge Fund,Alpha fund typically hedge fund
-MUNSUN NEW TECHNOLOGY FUND,Hedge Fund,"Technology fund, typically hedge fund"
-SIGAV-L-MW S,Hedge Fund,MW (Man Group) known for hedge funds
-LONE STAR FUND IX (BERMUDA) L.P.,Private Equity,Lone Star is a private equity firm
-LMA IRELAND - MAP 504,Hedge Fund,Map funds typically hedge fund
-VALUE PTRNS HIGH DIVI STK FD,Hedge Fund,Value partners known for hedge funds
-TENARON CAPITAL MSTR FD,Hedge Fund,Master fund suggests a hedge fund
-SPF SECURITIZED PRDCT MAS FD,Hedge Fund,Securitized products typically hedge fund
-CITADEL MULTI-STRA EQ SARL,Hedge Fund,Citadel known for hedge funds
-PAG LOAN FUND IV LP,Private Equity,Loan fund typically private equity
-SPINNAKER GLOBL EMER MART FD,Hedge Fund,Emerging markets typically hedge fund
-ALGEBRIS GLOBAL FINANCIALS F,Hedge Fund,Algebris known for hedge funds
-BWY - PAMM LP,Hedge Fund,PAMM suggests a hedge fund
-GRAT MNG FD C M CS FUD LTD,Hedge Fund,Managed funds typically hedge fund
-MUNSUN ABSOLUTE FD,Hedge Fund,Absolute return fund typically hedge fund
-BLACKROCK PVEP D FD INV SARL,Private Equity,PVEP suggests private equity
-CHESTNUT REC FINANCING LLC,Neither,Not enough information
-NAVIK CAPITAL LIMITED,Neither,Not enough information
-ASOF HOLDINGS,Private Equity,Holdings suggest private equity
-GLOBAL INFR PTE EMG M F LP LP,Private Equity,Infrastructure fund typically private equity
-ABC WORLD PTE LTD,Neither,Not enough information
-LBLTY AWARE ABS R II N PROF,Hedge Fund,Liability aware suggests hedge fund
-MW UCITS-MW SYS ALP UCITS FD,Hedge Fund,UCITS structure but MW is hedge fund
-SCHONFELD STRGC ADVS-SIR MF,Hedge Fund,Schonfeld known for hedge funds
-BRVN HWRD Emrg MKT S M CP GR(Dnu),Hedge Fund,Brevan Howard known for hedge funds
-CRCM INST MASTER FD,Hedge Fund,Master fund suggests a hedge fund
-Aviva Inv GLB Ser Ltd Fund V116,Hedge Fund,Global series typically hedge fund
-HTHK-VALUE PARTNERS INTELLIGENT FUN,Hedge Fund,Value partners known for hedge funds
-F.NISTEREE GLOBAL OPP FUND,Hedge Fund,Opportunity fund typically hedge fund
-EK HONG KONG AND CHINA FUND,Hedge Fund,Hong Kong and China fund typically hedge fund
-GLOBAL PVT OPP PTRNR II LP,Private Equity,Private opportunities suggest PE
-ZZ STRAT LTD,Hedge Fund,Strategies fund typically hedge fund
-VERRAZZANO EURO OPM FD,Hedge Fund,Opportunistic fund typically hedge fund
-AGNC INVESTMENT CORP,Neither,Publicly traded corporation
-SILVERFLEET CAPITAL PARTNERS,Private Equity,Specializes in private equity investments
-ADVENT INTL PE ADV SC,Private Equity,A well-known private equity firm
-DISCOVERY GLO BECN PTNR LP,Private Equity,Private equity firm
-CARLYLE EUROPE REALTY FUND,Private Equity,Private equity real estate fund
-SCHRODERS GAIA AVOCA CRED,Hedge Fund,Hedge fund under the Schroders GAIA platform
-TUDOR TRADING VII LP,Hedge Fund,Hedge fund managed by Tudor Investment Corp
-SOLODA GLOBAL MACRO MASTR FD,Hedge Fund,Hedge fund with a global macro strategy
-FOCUS SELECT FUND LTD,Hedge Fund,Hedge fund with a focus on select investments
-HBK Global Securities/CP GP,Hedge Fund,Hedge fund managed by HBK Capital Management
-AUGUSTA FUND 1 LP,Hedge Fund,Hedge fund
-BRIMSTSPC CHNSTABLEINCFD SP2,Hedge Fund,Hedge fund
-ASHMORE LOCAL CURRENCY DEBT,Hedge Fund,Hedge fund specializing in local currency debt
-MORGAN STANLEY AIP MULTI,Neither,Alternative investment platform
-BRIA-BRIDGEWATER ALL WTH ST,Hedge Fund,Hedge fund by Bridgewater Associates
-AG MORTGAGE VALUE P M F LP,Neither,Mortgage investment fund
-GAM STRATA ALT INC,Hedge Fund,Hedge fund
-SPX FD SPC THE SEG PT CAD EG,Hedge Fund,Hedge fund
-Citadel GLB Eq MSTR FD/Gmra,Hedge Fund,Hedge fund by Citadel
-IGNIS ABSOLUTE RETURN,Hedge Fund,Hedge fund
-GRP III NEPTUNE LP,Hedge Fund,Hedge fund
-Saba Capital MGT LP Group,Hedge Fund,Hedge fund
-RIT CAPITAL PARTNERS PLC,Private Equity,Investment trust with private equity investments
-TCC MAST MUL-STRAT FD L P,Hedge Fund,Hedge fund
-EMSO AGV FD-EMSO CRC LG OF,Hedge Fund,Hedge fund
-CAPULA TACTICAL MACRO MTR FD,Hedge Fund,Hedge fund
-SOROS FD MGT LLC-JS CAPITAL,Hedge Fund,Hedge fund
-ATLAS MACRO MASTER FUND LTD,Hedge Fund,Hedge fund
-AHL PTNR-AM BCN FD-ABAMAF,Hedge Fund,Hedge fund
-POINT72 LONDON INV LTD,Hedge Fund,Hedge fund
-HARBOURVEST HARVEST FUND II,Private Equity,Private equity fund
-DAVIDSON KEMPNER INT LTD,Hedge Fund,Hedge fund
-GEMSSTOCK CAV MASTER LP,Hedge Fund,Hedge fund
-HBFR le Fbo Hbeu Alg Ucits Re Afifc,Hedge Fund,Hedge fund
-OCONNOR APE LG SHT MTR LTD,Hedge Fund,Hedge fund
-TOR ASIA CREDIT MS FUND LP,Hedge Fund,Hedge fund
-MAVERICK NLF LTD,Hedge Fund,Hedge fund
-FIFTH STREET STATIN LLC G GKB,Private Equity,Private equity fund
-IAM PRENTICE LONG/SHORT,Hedge Fund,Hedge fund
-LA TROBE FI CAP MK TR 2020-1,Neither,Financial investment trust
-GLOBAL OPPORTUNITIES FD AKNU,Hedge Fund,Hedge fund
-ARKKAN OPPORTUNITIES FD GRP,Hedge Fund,Hedge fund
-KKR-DUS EDL PARTNERS SCSP,Private Equity,Private equity fund by KKR
-FIELD STREET MASTER FUND LTD,Hedge Fund,Hedge fund
-New CPTL ALTtrve STS-NCMLS,Neither,Alternative investment strategy fund
-JPS MOORE LE,Hedge Fund,Hedge fund
-DRUCKENMILLER S,Hedge Fund,Hedge fund
-FDVG EQUITY INVESTMENTS LT-P,Neither,Equity investment fund
-RICHARD H SCHIMEL,Hedge Fund,Hedge fund
-LINZOR CAPITAL PARTNERS II,Private Equity,Private equity firm
-PAG ASIA OPP CB FD LP,Private Equity,Private equity fund
-ANLLY,Neither,Not categorized
-IFM GLOBAL INFRASTR AU TRUST,Private Equity,Private equity infrastructure fund
-IMA IRELAND - MAP 501,Neither,Not categorized
-FRANKLIN TEMPLTN IM-13115-CG,Neither,Investment management fund
-IAM ELF ALPHA OPPORTUNITIES,Hedge Fund,Hedge fund
-TCI LUX SARL,Hedge Fund,Hedge fund
-BARING AS PRI EQ FD VIII LP,Private Equity,Private equity fund
-VALUE PIF-JA-VP CHINA NEW CF,Neither,Investment fund
-GALENE FUND,Hedge Fund,Hedge fund
-FDVG LOW VOLATILITY INV LTD,Neither,Investment fund
-MACROSYNERGY ARGENTINA MF,Hedge Fund,Hedge fund
-PERMIRA VI,Private Equity,Private equity fund
-HTHK-SAM GREATER CHINA EQUITY FUND,Neither,Equity fund
-HTHK-SCHRODER UMBRELLA FUND II-SCHR,Neither,Investment fund
-TD MOORE LP,Hedge Fund,Hedge fund
-USS-4123S-Alt-Absl RTN-48404,Hedge Fund,Hedge fund
-WARBURG PINCUS PRIV EQ IX LP,Private Equity,Private equity fund
-QUBE FUND LTD,Hedge Fund,Hedge fund
-AMER BCN AHL M F S FD S,Hedge Fund,Hedge fund
-MOON CAP PER PLUS MAST,Hedge Fund,Hedge fund
-FYI SARL,Neither,Not categorized
-CAPITALIA HIGH VOLATILITY,Neither,Investment fund
-CHILDRENS INVSTMT MASTER FD,Hedge Fund,Hedge fund
-ARISAIG ASIA CONSUMER FD LTD,Hedge Fund,Hedge fund
-NINE MASTS INVMT FD MF,Hedge Fund,Hedge fund
-BLACKROCK IM (UK)-TAF-RE-CH,Hedge Fund,Hedge fund
-QUBE MASTER FUND LTD,Hedge Fund,Hedge fund
-BROAD STREET SNR CR PN OS LP,Hedge Fund,Hedge fund
-Millennium Global CUR FD,Hedge Fund,Hedge fund
-COMPLUS ASIA RATES DRAGON FUND LTD,Hedge Fund,Hedge fund
+CVI CHVF Lux SECURITIES SARL,Private Equity,"Managed by CVI, which is known for private equity"
+ATLAS ENHANCED MASTR FD LTD,Hedge Fund,Enhanced Master Fund suggests a hedge fund
+Cerberus European RDLHDGS,Private Equity,Cerberus is primarily a private equity firm
+BRIDGEWATER ASSO-BW-M PA 24,Hedge Fund,Bridgewater is a well-known hedge fund
+COMPSS MAV LLC,Hedge Fund,Common structure for hedge funds
+CITADEL MULTI-STRA EQ SARL,Hedge Fund,Citadel is known for its hedge fund operations
+ALGEBRIS GLOBAL FINANCIALS F,Hedge Fund,Algebris runs hedge funds focused on financials
+BWV - PAMM LP,Hedge Fund,BWV is a hedge fund manager
+BLACKROCK PVEP D FD INV SARL,Private Equity,BlackRock Private Equity Partners
+CHESTNUT REC FINANCING LLC,Private Equity,Common structure for private equity investments
+ASOF HOLDINGS I,Private Equity,Typically used by private equity firms
+ABC WORLD PTE LTD,Neither,No indication of being hedge fund or private equity
+BRVN HWRD Emrg MKT S MCP GR(Dnu),Hedge Fund,Brevan Howard is a hedge fund
+CRCM INST MASTER FD,Hedge Fund,Common name structure for hedge funds
+Aviva Inv GLB Ser Ltd Fund V116,Private Equity,Aviva Investors involved in private equity
+AGNC INVESTMENT CORP,Neither,Real estate investment trust (REIT)
+ADVENT INTL PE ADV SC,Private Equity,Advent International is a private equity firm
+CARLYLE EUROPE REALTY FUND,Private Equity,Carlyle Group is a private equity firm
+AUGUSTA FUND 1 LP,Hedge Fund,Common name structure for hedge funds
+BRIMSTS CHNSTABLEINCFD SP2,Hedge Fund,Likely a hedge fund based on naming convention
+ASHMORE LOCAL CURRENCY DEBT,Hedge Fund,Ashmore specializes in emerging market funds
+BRIA-BRIDGEWATER ALL WTH ST,Hedge Fund,Bridgewater is a well-known hedge fund
+BTG Pactual Global Fund LP,Hedge Fund,BTG Pactual runs hedge funds
+AG MORTGAGE VALUE P MF LP,Hedge Fund,Common structure for hedge funds
+Citadel GLB Eq MSTR FD/Gr,Hedge Fund,Citadel is known for its hedge fund operations
+CAPULA TACTICAL MACRO MTR FD,Hedge Fund,Capula Investment Management is a hedge fund
+ATLAS MACRO MASTER FUND LTD,Hedge Fund,Macro Master Fund suggests a hedge fund
+AHL PTNR-AM BCN FD-ABAMAF,Hedge Fund,AHL Partners runs hedge funds
+DAVIDSON KEMPNER INT LTD,Hedge Fund,Davidson Kempner is a hedge fund manager
+ARKKAN OPPORTUNITIES FD GRP,Hedge Fund,Common structure for hedge funds
+CARVAL CCF LUXEMBOURG SARL,Private Equity,CarVal Investors focuses on private equity
+ANNLY,Neither,Real estate investment trust (REIT)
+BARING AS PRI EQ FD VIII LP,Private Equity,Baring Private Equity Asia
+AMER BCN AHL M F S F DS,Hedge Fund,AHL Partners runs hedge funds
+CAPITAALIA HIGH VOLATILITY,Hedge Fund,High Volatility fund suggests a hedge fund
+CHILDRENS INVSTMENT MASTER FD,Hedge Fund,The Children's Investment Fund is a hedge fund
+ARISAIG ASIA CONSUMER FD LTD,Hedge Fund,Arisaig Partners runs hedge funds
+BLACKROCK IM (UK)-TAF-RE-CH,Private Equity,BlackRock Private Equity Partners
+BROAD STREET SNR CR PN OS LP,Hedge Fund,Broad Street focuses on hedge fund investments
+COMPLUS ASIA RATES DRAGON FUND LTD,Hedge Fund,Likely a hedge fund based on naming convention
+Algebris UK Limited,Hedge Fund,Algebris runs hedge funds
+BLUEBAY MACRO MASTER,Hedge Fund,BlueBay specializes in hedge funds
+CARVAL GCF MASTER FUND LP,Hedge Fund,Common structure for hedge funds
+Acrefi HS LC,Private Equity,Common structure for private equity investments
+BTG PACTUAL ABSOLUTE RF MF LP,Hedge Fund,BTG Pactual runs hedge funds
+ASSET HOLDER PCC LTD-AEMLIP,Hedge Fund,Likely a hedge fund based on naming convention
+BRIDGEWATER ASS-BRIDGEWTR AW,Hedge Fund,Bridgewater is a well-known hedge fund
+ALLIANCE BERNSTEIN-SASS (P),Hedge Fund,AllianceBernstein runs hedge funds
+AIGUILLES ROU SEC A INV FD,Private Equity,Private equity based on name
+ARISTEA SICAV FIM GEM DEBT,Hedge Fund,Aristea SICAV runs hedge funds
+BREVAN HWD AS MC MS FD LTD,Hedge Fund,Brevan Howard is a hedge fund
+BAKER STEEL RESOURCES TRUST LIMITED,Private Equity,Baker Steel focuses on private equity
+CHEYNE RLES CR (CRECH) FD V,Hedge Fund,Cheyne Capital is a hedge fund manager
+BRAHMAN PURE ALPHA PTE LTD,Hedge Fund,Likely a hedge fund based on naming convention
+AB ABBOTT PRIVATE EQ INV,Private Equity,Abbott Capital is a private equity firm
+CITADEL INVESTMENT GROUP LLP,Hedge Fund,Citadel is known for its hedge fund operations
+BROOKDALE GBL OPP FD-US-AF,Hedge Fund,Common structure for hedge funds
+BLACKROCK EMMPD II S.A.R.L. SICAV-R,Hedge Fund,BlackRock runs hedge funds
+BAM LTD AS RE FOR BRIDGEWATE,Hedge Fund,BAM is a hedge fund manager
+DBX EM MACRO 1 FUND ARTW,Hedge Fund,Macro Fund suggests a hedge fund
+DIRECT LENDING FUND II SLP,Private Equity,Direct lending funds are typically private equity
+CARLYLE EUROPEAN CAPITAL,Private Equity,Carlyle Group is a private equity firm
+ARDON MAROON ASIA MSTR FD,Hedge Fund,Likely a hedge fund based on naming convention
