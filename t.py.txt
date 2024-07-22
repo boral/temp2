@@ -1,15 +1,15 @@
-TUDOR GLOBAL FUND LP	Hedge Fund	Known hedge fund
-SICAV-L-MW S	Neither	SICAVs are typically mutual funds
-GLOBAL INFR PTR EMG M FLLP	Private Equity	Infrastructure investment suggests private equity
-GLOBAL PVT OP PRTNR III LP	Private Equity	Private opportunities suggest private equity
-VERRAZZANO EURO OP M FD	Hedge Fund	Known hedge fund
-HBFR le Fbo Hbeu Alg Ucits Re Afifc	Hedge Fund	UCITS suggests hedge fund
-FIFTH STREET STATIN LLC EGKB	Private Equity	Private investment firm
-New CPTLAltrive STS-NCMLS	Hedge Fund	Alternative strategies suggest hedge fund
-FDVG LOW VOLATILITY INV LTD	Hedge Fund	Low volatility strategy suggests hedge fund
-NINE MASTS INVMT FD MF	Hedge Fund	Known hedge fund
-SOUVERAIN TITRISATION	Neither	Limited information available
-BTG PACTUAL ABSOLTE RT MF LP	Hedge Fund	Absolute return strategy suggests hedge fund
-IFS/Htie Re Algebris Fin C F(Dnu)	Hedge Fund	Financial strategy suggests hedge fund
-BLACKROCK EMMPD II S.A.R.L. SICAV-R	Private Equity	SICAV-R structure suggests private equity
-KKR ASIAN FUND III L P	Private Equity	Known private equity fund
+TUDOR GLOBAL FUND LP,Hedge Fund,Known hedge fund
+SICAV-L-MW S,Neither,SICAVs are typically mutual funds
+GLOBAL INFR PTR EMG M FLLP,Private Equity,Infrastructure investment suggests private equity
+GLOBAL PVT OP PRTNR III LP,Private Equity,Private opportunities suggest private equity
+VERRAZZANO EURO OP M FD,Hedge Fund,Known hedge fund
+HBFR le Fbo Hbeu Alg Ucits Re Afifc,Hedge Fund,UCITS suggests hedge fund
+FIFTH STREET STATIN LLC EGKB,Private Equity,Private investment firm
+New CPTLAltrive STS-NCMLS,Hedge Fund,Alternative strategies suggest hedge fund
+FDVG LOW VOLATILITY INV LTD,Hedge Fund,Low volatility strategy suggests hedge fund
+NINE MASTS INVMT FD MF,Hedge Fund,Known hedge fund
+SOUVERAIN TITRISATION,Neither,Limited information available
+BTG PACTUAL ABSOLTE RT MF LP,Hedge Fund,Absolute return strategy suggests hedge fund
+IFS/Htie Re Algebris Fin C F(Dnu),Hedge Fund,Financial strategy suggests hedge fund
+BLACKROCK EMMPD II S.A.R.L. SICAV-R,Private Equity,SICAV-R structure suggests private equity
+KKR ASIAN FUND III L P,Private Equity,Known private equity fund
