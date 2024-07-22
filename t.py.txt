@@ -1,1 +1,63 @@
-
+SYSTRADAS RKPREM MSTFDLTD,Neither,Limited information available
+MOORE GLOBAL INVESTMENT,Hedge Fund,Known hedge fund
+PARALLAX VLTY ADV-PRLLX MF,Hedge Fund,Known hedge fund
+TUDOR GLOBAL FUND LP,Hedge Fund,Known hedge fund
+HTHK-HKIC-SPARX JAP ASIA BEST PICK,Hedge Fund,Investment strategy suggests hedge fund
+SICAV-L-MWS,Neither,SICAVs are typically mutual funds
+LONE STAR FUND IX (BERMD) LP,Private Equity,Known private equity fund
+VALUE PTNRS HIGH DIVI STK FD,Hedge Fund,Focus on high dividend stocks suggests hedge fund
+GRAT MNG FD C MS FUD LTD,Neither,Limited information available
+GLOBAL INFR PTR EMG MF I LP,Private Equity,Infrastructure investment suggests private equity
+LBLTY AWRE ABS R III N PROF,Hedge Fund,Absolute return strategy suggests hedge fund
+FINISTERRE GLOBAL OPP FUND,Hedge Fund,Known hedge fund
+GLOBAL PVT OPP PRTNR III LP,Private Equity,Private opportunities suggest private equity
+VERRAZZANO EURO OP FD,Hedge Fund,Known hedge fund
+EMSO ASS MGT-ARCLINE ALT LS,Hedge Fund,Known hedge fund
+IFS/CFB Short Fixed Interest Fund,Neither,Limited information available
+GRP III NEPTUNE L P,Private Equity,Private partnership structure
+HBFR Ie Fbo Hbeu Alg Ucits Re Affic,Hedge Fund,UCITS suggests hedge fund
+FIFTH STREET STATIN LLC E GKB,Private Equity,Private investment firm
+New CPTL Altrve STS-NCMLS,Hedge Fund,Alternative strategies suggest hedge fund
+JPS MOORE LP,Hedge Fund,Known hedge fund
+EK ASIA FUND,Hedge Fund,Known hedge fund
+LMA IRELAND - MAP 501,Hedge Fund,Known hedge fund
+IAM EJF ALPHA OPPORTUNITIES,Hedge Fund,Alpha opportunities suggest hedge fund
+FDVG LOW VOLATILITY INV LTD,Hedge Fund,Low volatility strategy suggests hedge fund
+USS-41323-Alt-Absl RTN-48404,Hedge Fund,Absolute return strategy suggests hedge fund
+PRISA,Private Equity,Known private equity fund
+MOON CAP PERF PLUS MAST,Hedge Fund,Performance-based strategy suggests hedge fund
+FYI SA RL,Neither,Limited information available
+CHILDRENS INVSTMNT MASTER FD,Hedge Fund,Known hedge fund
+NINE MASTS INVTMNT FD MF,Hedge Fund,Known hedge fund
+WHARD STEWART MT FD LTD,Hedge Fund,Known hedge fund
+VP INTELLIGENT FDS-CHINA ABH,Hedge Fund,Intelligent fund strategy suggests hedge fund
+MAN AHL DVRSFD FUT LTD,Hedge Fund,Diversified futures strategy suggests hedge fund
+"SCULPTOR ASIA MASTER FUND, LTD.",Hedge Fund,Known hedge fund
+HTHK-VP CH ASHR IN FD SP,Hedge Fund,Investment strategy suggests hedge fund
+EMERGING MARKETS LCBM FD LTD,Hedge Fund,Focus on emerging markets suggests hedge fund
+IBIUNA-IBIUNA FUND SPC,Hedge Fund,Special purpose company for hedge fund
+SOVEREIGN TITRISATION,Neither,Limited information available
+Acrefi HS LLC,Neither,Limited information available
+ONCE UPON A TIME FOUNDATION,Neither,"Foundation, not an investment fund"
+BTG PACTUAL ABSOLUTE RT MF LP,Hedge Fund,Absolute return strategy suggests hedge fund
+Iam Inv Icv-Im B+W in UC FD,Hedge Fund,UCITS suggests hedge fund
+MKP CAP MGT-MKP SLCT MF,Hedge Fund,Known hedge fund
+MERRILL LCH IS-O-ZEMS UCITSF,Hedge Fund,UCITS suggests hedge fund
+IFS/Hite Re Algebris Fin C F(Dnu),Hedge Fund,Financial strategy suggests hedge fund
+SAND GROV SPEC PURP FD I LTD,Hedge Fund,Special purpose fund for hedge fund
+VONWIN CAPITAL MANAGEMENT LP,Hedge Fund,Known hedge fund
+OMNI EVT MTR FD LTD,Hedge Fund,Event-driven strategy suggests hedge fund
+Cheyne Rl ES CR (CRECH) FD V,Hedge Fund,Real estate credit strategy suggests hedge fund
+GOLDENTREE INS FD SR INT,Hedge Fund,Insurance-linked strategy suggests hedge fund
+PACKPAR FUND,Hedge Fund,Known hedge fund
+SUSQUEHANNA FINL GROUP LLLP,Neither,"Financial group, not a fund"
+BLACKROCK EMMPD II S.A.R.L. SICAV-R,Private Equity,SICAV-R structure suggests private equity
+GLENVIEW CAPITAL MANAGEMENT LLC,Hedge Fund,Known hedge fund
+FAMOUS TIME LIMITED,Neither,Limited information available
+KKR ASIAN FUND III LP,Private Equity,Known private equity fund
+GALE INVEST CI E,Neither,Limited information available
+SL CAP SOF II LP,Private Equity,Private equity structure
+OPTIMA DISCRTNRY MACRO F LTD,Hedge Fund,Discretionary macro strategy suggests hedge fund
+GENUS DYNAMIC FUND,Hedge Fund,Dynamic strategy suggests hedge fund
+GLG EURO LONG-SHORT MR FD LT,Hedge Fund,Long-short strategy suggests hedge fund
+Nomu Pay Limited,Neither,"Payment company, not a fund"
