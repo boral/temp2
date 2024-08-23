@@ -1,15 +1,17 @@
-TUDOR GLOBAL FUND LP,Hedge Fund,Known hedge fund
-SICAV-L-MW S,Neither,SICAVs are typically mutual funds
-GLOBAL INFR PTR EMG M FLLP,Private Equity,Infrastructure investment suggests private equity
-GLOBAL PVT OP PRTNR III LP,Private Equity,Private opportunities suggest private equity
-VERRAZZANO EURO OP M FD,Hedge Fund,Known hedge fund
-HBFR le Fbo Hbeu Alg Ucits Re Afifc,Hedge Fund,UCITS suggests hedge fund
-FIFTH STREET STATIN LLC EGKB,Private Equity,Private investment firm
-New CPTLAltrive STS-NCMLS,Hedge Fund,Alternative strategies suggest hedge fund
-FDVG LOW VOLATILITY INV LTD,Hedge Fund,Low volatility strategy suggests hedge fund
-NINE MASTS INVMT FD MF,Hedge Fund,Known hedge fund
-SOUVERAIN TITRISATION,Neither,Limited information available
-BTG PACTUAL ABSOLTE RT MF LP,Hedge Fund,Absolute return strategy suggests hedge fund
-IFS/Htie Re Algebris Fin C F(Dnu),Hedge Fund,Financial strategy suggests hedge fund
-BLACKROCK EMMPD II S.A.R.L. SICAV-R,Private Equity,SICAV-R structure suggests private equity
-KKR ASIAN FUND III L P,Private Equity,Known private equity fund
+for rd in risk_drivers.risk_driver.unique():
+    print(rd)
+    
+    # Convert the relevant columns to string type to ensure consistency for merging
+    cohort_data[rd.lower()] = cohort_data[rd.lower()].astype(str)
+    risk_drivers['level'] = risk_drivers['level'].astype(str)
+
+    # Perform the merge and create the new column
+    cohort_data[rd.upper() + "_NUM"] = cohort_data[[rd.lower()]].merge(
+        risk_drivers[risk_drivers.risk_driver.str.match(rd)], 
+        how="left", 
+        left_on=rd.lower(), 
+        right_on="level"
+    )['value']
+
+    # Optionally, handle NaN values (if needed)
+    cohort_data[rd.upper() + "_NUM"] = cohort_data[rd.upper() + "_NUM"].fillna(0)
