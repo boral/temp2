@@ -1,17 +1,395 @@
-for rd in risk_drivers.risk_driver.unique():
-    print(rd)
+import pandas as pd
+from datetime import datetime, timedelta
+import numpy as np
+
+validity_month = 6
+
+# Import Excel file
+def import_excel(filename, sheet=None):
+    if sheet:
+        return pd.read_excel(filename, sheet_name=sheet)
+    else:
+        return pd.read_excel(filename)
+
+# Export to Excel
+def export_excel(df, filename, sheet=None):
+    with pd.ExcelWriter(filename, engine='xlsxwriter') as writer:
+        if sheet:
+            df.to_excel(writer, sheet_name=sheet, index=False)
+        else:
+            df.to_excel(writer, index=False)
+
+# Fetch APL data
+def fetch_apl_data(scope_df, apl_df):
+    merged_df = pd.merge(scope_df, apl_df[['gcdu_global_id', 'approval_date', 'final_crr']], on='gcdu_global_id', how='left')
+    return merged_df
+
+# Generate cohort dates
+def generate_cohort_date(first_cohort_date, last_cohort_date):
+    cohort_dates = []
+    first_cohort_date = pd.to_datetime(first_cohort_date, format='%d%b%Y')
+    last_cohort_date = pd.to_datetime(last_cohort_date, format='%d%b%Y')
+    cohort_count = (last_cohort_date.year - first_cohort_date.year) * 12 + last_cohort_date.month - first_cohort_date.month + 1
     
-    # Convert the relevant columns to string type to ensure consistency for merging
-    cohort_data[rd.lower()] = cohort_data[rd.lower()].astype(str)
-    risk_drivers['level'] = risk_drivers['level'].astype(str)
+    for i in range(cohort_count):
+        cohort_date = first_cohort_date + pd.DateOffset(months=i)
+        cohort_dates.append(cohort_date)
+    
+    return cohort_dates
 
-    # Perform the merge and create the new column
-    cohort_data[rd.upper() + "_NUM"] = cohort_data[[rd.lower()]].merge(
-        risk_drivers[risk_drivers.risk_driver.str.match(rd)], 
-        how="left", 
-        left_on=rd.lower(), 
-        right_on="level"
-    )['value']
+# Generate cohort data
+def generate_cohort_data(rating_df, cohort_dates):
+    rating_df = rating_df.sort_values(by=['gcdu_global_id', 'approval_date'])
+    rating_df['appdate_rank'] = rating_df.groupby('gcdu_global_id')['approval_date'].rank(method='first').astype(int)
+    
+    cohort2 = rating_df.merge(
+        rating_df[['gcdu_global_id', 'appdate_rank', 'approval_date']].rename(columns={'approval_date': 'next_approval_date'}),
+        left_on=['gcdu_global_id', 'appdate_rank'], 
+        right_on=['gcdu_global_id', rating_df['appdate_rank'] + 1],
+        how='left'
+    )
 
-    # Optionally, handle NaN values (if needed)
-    cohort_data[rd.upper() + "_NUM"] = cohort_data[rd.upper() + "_NUM"].fillna(0)
+    cohort3 = cohort2.groupby('gcdu_global_id').agg(min_approval_date=('approval_date', 'min'), max_approval_date=('approval_date', 'max')).reset_index()
+
+    cohort4 = pd.merge(cohort2, cohort3, on='gcdu_global_id')
+
+    cohort_list = []
+    for i, cohort_date in enumerate(cohort_dates, 1):
+        condition_1 = (~cohort4['approval_date'].isna()) & (~cohort4['next_approval_date'].isna()) & \
+                      (cohort4['approval_date'] < cohort_date) & (cohort4['next_approval_date'] >= cohort_date)
+        condition_2 = (~cohort4['approval_date'].isna()) & (cohort4['approval_date'] == cohort4['max_approval_date']) & \
+                      (cohort4['approval_date'] < cohort_date) & \
+                      (cohort4['approval_date'] + pd.DateOffset(months=validity_month) >= cohort_date)
+        
+        cohort4.loc[condition_1 | condition_2, 'cohort_date'] = cohort_date
+        cohort_list.append(cohort4[condition_1 | condition_2].copy())
+    
+    cohort_df = pd.concat(cohort_list).drop(columns=['next_approval_date', 'appdate_rank', 'min_approval_date', 'max_approval_date']).reset_index(drop=True)
+    return cohort_df
+
+
+# upto 130 above
+
+# Create blank cohort dataset
+def create_blank_cohort(in_df, cohort_dates):
+    blank_cohort_list = []
+    for cohort_date in cohort_dates:
+        temp_df = in_df.copy()
+        temp_df['cohort_date'] = cohort_date
+        blank_cohort_list.append(temp_df)
+    return pd.concat(blank_cohort_list).reset_index(drop=True)
+
+# Augment cohort dataset by merging rating-cohort data with blank cohort data
+def augment_cohort(blank_df, rating_cohort_df):
+    augmented_df = pd.merge(blank_df, rating_cohort_df, on=['gcdu_global_id', 'cohort_date'], how='left')
+    return augmented_df
+
+# Reformat (reorder transpose columns)
+def reformat(df, cohort_count):
+    for i in range(1, cohort_count + 1):
+        df[f'cohort{i}'] = None
+        df[f'cfcapp{i}'] = None
+        df[f'cfccrr{i}'] = None
+        df[f'cfbapp{i}'] = None
+        df[f'cfbcrr{i}'] = None
+    return df
+
+# Summary of cohort data
+def summary(df):
+    df['cfc_app_distinct_count'] = df['cfc_app_count'] = df['cfb_app_count'] = df['both_app_count'] = df['crr_match_count'] = 0
+    df['min_cfcapp_date'] = df['max_cfcapp_date'] = pd.NaT
+    df['min_cfbapp_date'] = df['max_cfbapp_date'] = pd.NaT
+    
+    for i in range(1, len(df.columns)//4):
+        cfcapp_col = f'cfcapp{i}'
+        cfccrr_col = f'cfccrr{i}'
+        cfbapp_col = f'cfbapp{i}'
+        cfbcrr_col = f'cfbcrr{i}'
+        
+        df['cfc_app_count'] += df[cfcapp_col].notna()
+        df['cfb_app_count'] += df[cfbapp_col].notna()
+        df['both_app_count'] += df[cfcapp_col].notna() & df[cfbapp_col].notna()
+        
+        df['crr_match_count'] += (df[cfccrr_col] == df[cfbcrr_col]) & df[cfccrr_col].notna() & df[cfbcrr_col].notna()
+        
+        df['min_cfcapp_date'] = df[['min_cfcapp_date', cfcapp_col]].min(axis=1)
+        df['max_cfcapp_date'] = df[['max_cfcapp_date', cfcapp_col]].max(axis=1)
+        df['min_cfbapp_date'] = df[['min_cfbapp_date', cfbapp_col]].min(axis=1)
+        df['max_cfbapp_date'] = df[['max_cfbapp_date', cfbapp_col]].max(axis=1)
+    
+    df['crr_match_pct'] = 100 * df['crr_match_count'] / df['both_app_count']
+    return df
+
+# Create flags based on both_app_count and crr_match_pct
+def create_flag(df):
+    df['both_app_count_flag'] = pd.cut(df['both_app_count'], bins=[0, 12, 24, float('inf')], labels=["3_lt_12", "2_12_24", "1_ge_24"])
+    df['crr_match_pct_flag'] = pd.cut(df['crr_match_pct'], bins=[0, 80, 85, 90, 95, float('inf')], labels=["5_lt_80", "4_80_85", "3_85_90", "2_90_95", "1_ge_95"])
+    return df
+
+# Filter name data
+def filter_name_data(name_df, apl_df):
+    initial_count = len(name_df)
+    return initial_count
+
+# upto 272
+
+# Extract unique cfc and cfb gids
+temp_cfc = name_df[['cfc_gid']].rename(columns={'cfc_gid': 'gcdu_global_id'}).drop_duplicates()
+temp_cfb = name_df[['cfb_gid']].rename(columns={'cfb_gid': 'gcdu_global_id'}).drop_duplicates()
+
+# Extract apl for cfc gids and find max, min
+temp_cfc_apl = pd.merge(temp_cfc, apl_grade_final, on='gcdu_global_id', how='left')
+temp_cfc_apl = temp_cfc_apl.dropna(subset=['final_crr', 'approval_date'])
+
+temp_cfc_apl_1 = temp_cfc_apl.groupby('gcdu_global_id').agg(
+    min_final_crr=('final_crr', 'min'),
+    max_final_crr=('final_crr', 'max'),
+    min_approval_date=('approval_date', 'min'),
+    max_approval_date=('approval_date', 'max')
+).reset_index()
+
+# Extract apl for cfb gids and find max, min
+temp_cfb_apl = pd.merge(temp_cfb, apl_grade_final, on='gcdu_global_id', how='left')
+temp_cfb_apl = temp_cfb_apl.dropna(subset=['final_crr', 'approval_date'])
+
+temp_cfb_apl_1 = temp_cfb_apl.groupby('gcdu_global_id').agg(
+    min_final_crr=('final_crr', 'min'),
+    max_final_crr=('final_crr', 'max'),
+    min_approval_date=('approval_date', 'min'),
+    max_approval_date=('approval_date', 'max')
+).reset_index()
+
+# Rename cfc apl max min fields
+temp_cfc_apl_2 = temp_cfc_apl_1.rename(columns={
+    'gcdu_global_id': 'cfc_gid',
+    'min_final_crr': 'cfc_min_final_crr',
+    'max_final_crr': 'cfc_max_final_crr',
+    'min_approval_date': 'cfc_min_approval_date',
+    'max_approval_date': 'cfc_max_approval_date'
+})
+
+# Rename cfb apl max min fields
+temp_cfb_apl_2 = temp_cfb_apl_1.rename(columns={
+    'gcdu_global_id': 'cfb_gid',
+    'min_final_crr': 'cfb_min_final_crr',
+    'max_final_crr': 'cfb_max_final_crr',
+    'min_approval_date': 'cfb_min_approval_date',
+    'max_approval_date': 'cfb_max_approval_date'
+})
+
+# Join back to original pair list
+name_data_temp = name_df.merge(temp_cfc_apl_2, on='cfc_gid', how='left').merge(temp_cfb_apl_2, on='cfb_gid', how='left')
+
+# Filter conditions
+name_data_temp_1 = name_data_temp.dropna(subset=['cfc_max_final_crr', 'cfb_max_final_crr', 'cfc_max_approval_date', 'cfb_max_approval_date'])
+name_data_temp_1 = name_data_temp_1[
+    ~((name_data_temp_1['cfc_max_final_crr'] < name_data_temp_1['cfb_min_final_crr']) | 
+      (name_data_temp_1['cfb_max_final_crr'] < name_data_temp_1['cfc_min_final_crr']) |
+      (name_data_temp_1['cfc_max_approval_date'] < name_data_temp_1['cfb_min_approval_date']) |
+      (name_data_temp_1['cfb_max_approval_date'] < name_data_temp_1['cfc_min_approval_date']))
+]
+
+# Assign to final output
+out_df = name_data_temp_1
+
+# Original and filtered pair count
+original_pair_count = len(name_df)
+filtered_pair_count = len(out_df)
+
+# APL history extraction
+def apl_history(in_df, apl_df):
+    temp_apl_hist = in_df[['gcdu_global_id']].drop_duplicates()
+    out_df = pd.merge(apl_df, temp_apl_hist, on='gcdu_global_id', how='inner')
+    return out_df
+
+# Load input-1: cfc_scope
+orig_scope['model'] = 'HF'
+orig_scope = orig_scope[['gcdu_global_id', 'carm_type', 'carm_flag', 'gra_flag', 'customer_name', 'model']]
+
+# Frequencies of carm_flag * carm_type
+cfc_scope = orig_scope[orig_scope['carm_flag'] == 'CFCONLY']
+
+# Load input-2: cfb_scope
+cfb_scope = orig_scope[orig_scope['carm_type'] == 'CFB']
+
+# Load input-3: ftrmatch
+ftrmatch_nodup = new_hf['ftrmatch_nodup_HF_14MAY2024_100']
+ftrmatch = new_hf['ftrmatch_HF_14MAY2024_100']
+
+# upto 402
+
+# SQL equivalent queries using pandas
+import pandas as pd
+
+# check - ftrmatch direct matches - 2352 - all cfconly
+count_distinct_counterparty_ftrmatch = ftrmatch[ftrmatch['match_method3'] == "Carm GID to RCT GID (CFC)"]['counterparty_code_obligor'].nunique()
+
+# check - ftrmatch_nodup direct matches - 1204 - all cfconly (not used for comparison)
+count_distinct_counterparty_ftrmatch_nodup = ftrmatch_nodup[ftrmatch_nodup['match_method3'] == "Carm GID to RCT GID (CFC)"]['counterparty_code_obligor'].nunique()
+
+# load input-4 : apl history and clean it
+apl_grade = corp_psf.apl_grade_combined_15MAR2024.copy()
+
+# clean 1 and clean 2
+apl_grade_1 = apl_grade[
+    (apl_grade['application_type_code'] != "CN") & 
+    (apl_grade['application_status_code'] == "A") &
+    apl_grade['gcdu_global_id'].notnull() &
+    apl_grade['final_crr'].notnull() &
+    apl_grade['approval_date'].notnull()
+][['gcdu_global_id', 'approval_date', 'final_crr', 'application_type_code', 'application_status_code', 'credit_serial_number']]
+
+# clean 3: Remove duplicate approval dates
+apl_grade_1.sort_values(by=['gcdu_global_id', 'approval_date', 'credit_serial_number'], ascending=[True, True, False], inplace=True)
+apl_grade_2 = apl_grade_1.drop_duplicates(subset=['gcdu_global_id', 'approval_date'])
+
+# create final data
+apl_grade_final = apl_grade_2.copy()
+
+# check 1: check for duplicates
+a = apl_grade_final.drop_duplicates(subset=['gcdu_global_id', 'approval_date'])
+b = apl_grade_final[apl_grade_final.duplicated(subset=['gcdu_global_id', 'approval_date'], keep=False)]
+
+# check 2: check for missing values
+check_2 = apl_grade_final[
+    apl_grade_final['approval_date'].isnull() |
+    apl_grade_final['final_crr'].isnull() |
+    apl_grade_final['gcdu_global_id'].isnull() |
+    (apl_grade_final['application_status_code'] != "A") |
+    (apl_grade_final['application_type_code'] == "CN")
+]
+
+# filter cfc scope to keep only ftr direct GID matches (2352)
+cfc_scope = cfc_scope[
+    cfc_scope['gcdu_global_id'].isin(
+        ftrmatch[ftrmatch['match_method3'] == "Carm GID to RCT GID (CFC)"]['counterparty_code_obligor'].unique()
+    )
+]
+
+# create combined scope 2352 + 5727 = 8079
+scope = pd.concat([cfc_scope, cfb_scope])[['gcdu_global_id', 'carm_type']]
+
+# create final combined scope
+scope_final = scope.copy()
+
+# check - scope should not have duplicate gids
+a = scope_final.drop_duplicates(subset=['gcdu_global_id'])
+b = scope_final[scope_final.duplicated(subset=['gcdu_global_id'], keep=False)]
+scope_carm_type_freq = scope_final['carm_type'].value_counts(dropna=False)
+
+# create name data (i.e. pair data) - total possible pairs
+name_data = pd.merge(cfc_scope.assign(cfc_gid=cfc_scope['gcdu_global_id']), cfb_scope.assign(cfb_gid=cfb_scope['gcdu_global_id']), how='cross')
+name_data['combo_gid'] = name_data['cfc_gid'] + "_" + name_data['cfb_gid']
+
+# filter name data (acceptable pairs)
+name_data_final = filter_name_data(name=name_data, apl=apl_grade_final)
+
+# generate rating data
+rating = fetch_apl_data(scope=scope_final, apl=apl_grade_final)
+
+# filter rating data for missing approval dates
+rating_1 = rating[rating['approval_date'].notnull()]
+
+# create final rating data
+rating_final = rating_1.copy()
+
+# check 1: check for duplicate approval date
+a = rating_final.drop_duplicates(subset=['gcdu_global_id', 'approval_date'])
+b = rating_final[rating_final.duplicated(subset=['gcdu_global_id', 'approval_date'], keep=False)]
+
+# check 2: check for missing approval date
+check_missing_approval_date = rating_final[rating_final['approval_date'].isnull()]
+
+# generate cohort data
+generate_cohort_date("01JAN2010", "01JAN2024")
+
+# generate rating-cohort data
+generate_cohort_data(rating=rating_final, out='rating_cohort')
+
+# generate blank-cohort data
+create_blank_cohort(in=scope_final, out='blank_cohort')
+
+# generate full-cohort data
+full_cohort = augment_cohort(blank='blank_cohort', in_data='rating_cohort')
+
+full_cohort.sort_values(by=['gcdu_global_id', 'carm_type', 'cohort_date', 'approval_date'], ascending=[True, False, True, True], inplace=True)
+
+full_cohort_final = full_cohort.copy()
+
+# check - 0 duplicate cohort_date
+a = full_cohort_final.drop_duplicates(subset=['gcdu_global_id', 'cohort_date'])
+b = full_cohort_final[full_cohort_final.duplicated(subset=['gcdu_global_id', 'cohort_date'], keep=False)]
+
+# transpose cohort data
+full_cohort_cfc = full_cohort_final[full_cohort_final['carm_type'] == "CFC"].copy()
+full_cohort_cfc.rename(columns={'gcdu_global_id': 'cfc_gid'}, inplace=True)
+full_cohort_cfb = full_cohort_final[full_cohort_final['carm_type'] == "CFB"].copy()
+full_cohort_cfb.rename(columns={'gcdu_global_id': 'cfb_gid'}, inplace=True)
+
+# sort for transpose
+full_cohort_cfc.sort_values(by=['cfc_gid', 'cohort_date', 'approval_date'], inplace=True)
+full_cohort_cfb.sort_values(by=['cfb_gid', 'cohort_date', 'approval_date'], inplace=True)
+
+# transpose cohort data
+full_cohort_cfc_tr1 = full_cohort_cfc.pivot(index='cfc_gid', columns=None, values='cohort_date').add_prefix('cohort')
+full_cohort_cfc_tr2 = full_cohort_cfc.pivot(index='cfc_gid', columns=None, values='approval_date').add_prefix('cfcapp')
+
+# upto 550
+
+# Transpose and merge data equivalent in pandas
+
+# Transpose cohort data for full_cohort_cfc
+full_cohort_cfc_tr3 = full_cohort_cfc.pivot(index='cfc_gid', values='final_crr').add_prefix('cfccrr')
+full_cohort_cfb_tr4 = full_cohort_cfb.pivot(index='cfb_gid', values='approval_date').add_prefix('cfbapp')
+full_cohort_cfb_tr5 = full_cohort_cfb.pivot(index='cfb_gid', values='final_crr').add_prefix('cfbcrr')
+
+# Merge transpose data with all pairs (name_data_final)
+full_cohort_tr_combo = pd.merge(name_data_final, full_cohort_cfc_tr1, on='cfc_gid', how='left')
+full_cohort_tr_combo = pd.merge(full_cohort_tr_combo, full_cohort_cfc_tr2, on='cfc_gid', how='left')
+full_cohort_tr_combo = pd.merge(full_cohort_tr_combo, full_cohort_cfc_tr3, on='cfc_gid', how='left')
+full_cohort_tr_combo = pd.merge(full_cohort_tr_combo, full_cohort_cfb_tr4, on='cfb_gid', how='left')
+full_cohort_tr_combo = pd.merge(full_cohort_tr_combo, full_cohort_cfb_tr5, on='cfb_gid', how='left')
+
+# Summary and flag creation (equivalent to %summary and %create_flag)
+full_cohort_tr_combo_1 = summary(full_cohort_tr_combo)
+full_cohort_tr_combo_2 = create_flag(full_cohort_tr_combo_1)
+
+# Create final combined data
+full_cohort_tr_combo_final = full_cohort_tr_combo_2.copy()
+
+# Sort and remove duplicates to keep the best pair
+temp_final = full_cohort_tr_combo_final.sort_values(
+    by=['cfc_gid', 'crr_match_pct', 'both_app_count'], ascending=[True, False, False]
+)
+full_cohort_tr_combo_final_nodup = temp_final.drop_duplicates(subset=['cfc_gid'])
+
+# Check - match found for how many cfc gids
+match_found_cfc_gids = full_cohort_tr_combo_final_nodup.shape[0]
+
+# Check - 0 duplicate cfc gids
+a = full_cohort_tr_combo_final_nodup.drop_duplicates(subset=['cfc_gid'])
+b = full_cohort_tr_combo_final_nodup[full_cohort_tr_combo_final_nodup.duplicated(subset=['cfc_gid'], keep=False)]
+
+# Summary check
+summary_check = pd.crosstab(
+    full_cohort_tr_combo_final_nodup['both_app_count_flag'], 
+    full_cohort_tr_combo_final_nodup['crr_match_pct_flag'], 
+    margins=False, dropna=False
+)
+
+# Extract apl history
+apl_history = apl_history(scope=scope_final, apl=apl_grade)
+
+# Create lean output data
+full_cohort_tr_combo_final_lean = full_cohort_tr_combo_final_nodup[[
+    'combo_gid', 'cfc_gid', 'cfb_gid', 'both_app_count_flag', 'crr_match_pct_flag', 
+    'cfc_app_distinct_count', 'cfb_app_distinct_count', 'cfc_app_count', 'cfb_app_count', 
+    'both_app_count', 'crr_match_count', 'crr_match_pct', 'min_cfcapp_date', 'max_cfcapp_date', 
+    'min_cfbapp_date', 'max_cfbapp_date'
+]]
+
+# Save/export output
+rundt = "15MAY2024"
+full_cohort_tr_combo_final_nodup.to_excel(f'/data/sasdata/rmad/teams/model_development/Nirmalya/hf/ftr/output/hf_cfconly_rating_comparison_{rundt}.xlsx', sheet_name='output')
+full_cohort_tr_combo_final_lean.to_excel(f'/data/sasdata/rmad/teams/model_development/Nirmalya/hf/ftr/output/hf_cfconly_rating_comparison_{rundt}.xlsx', sheet_name='output_1')
+apl_history.to_excel(f'/data/sasdata/rmad/teams/model_development/Nirmalya/hf/ftr/output/hf_cfconly_rating_comparison_apl_history_{rundt}.xlsx', sheet_name='apl_history')
