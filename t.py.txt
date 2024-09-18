@@ -1,73 +1,11 @@
-def filter_name_data(name, apl, out):
+def apl_history(in_data, apl_data, out):
     import pandas as pd
-    
-    # Initial count of pairs
-    print(f"Initial count of pairs: {len(name)}")
 
-    # Extract unique cfc and cfb gids
-    temp_cfc = name[['cfc_gid']].rename(columns={'cfc_gid': 'gcdu_global_id'}).drop_duplicates()
-    temp_cfb = name[['cfb_gid']].rename(columns={'cfb_gid': 'gcdu_global_id'}).drop_duplicates()
+    # Remove duplicates by 'gcdu_global_id'
+    temp_apl_hist = in_data.drop_duplicates(subset='gcdu_global_id')
 
-    # Extract apl for cfc gids and find max, min
-    temp_cfc_apl = pd.merge(temp_cfc, apl[['gcdu_global_id', 'final_crr', 'approval_date']].dropna(), 
-                            on='gcdu_global_id', how='left')
-    
-    temp_cfc_apl_1 = temp_cfc_apl.groupby('gcdu_global_id').agg(
-        min_final_crr=('final_crr', 'min'),
-        max_final_crr=('final_crr', 'max'),
-        min_approval_date=('approval_date', 'min'),
-        max_approval_date=('approval_date', 'max')).reset_index()
+    # Inner join on 'gcdu_global_id'
+    out_data = pd.merge(apl_data, temp_apl_hist[['gcdu_global_id']], on='gcdu_global_id', how='inner')
 
-    # Extract apl for cfb gids and find max, min
-    temp_cfb_apl = pd.merge(temp_cfb, apl[['gcdu_global_id', 'final_crr', 'approval_date']].dropna(), 
-                            on='gcdu_global_id', how='left')
-    
-    temp_cfb_apl_1 = temp_cfb_apl.groupby('gcdu_global_id').agg(
-        min_final_crr=('final_crr', 'min'),
-        max_final_crr=('final_crr', 'max'),
-        min_approval_date=('approval_date', 'min'),
-        max_approval_date=('approval_date', 'max')).reset_index()
-
-    # Rename cfc apl max min fields
-    temp_cfc_apl_2 = temp_cfc_apl_1.rename(columns={
-        'gcdu_global_id': 'cfc_gid',
-        'min_final_crr': 'cfc_min_final_crr',
-        'max_final_crr': 'cfc_max_final_crr',
-        'min_approval_date': 'cfc_min_approval_date',
-        'max_approval_date': 'cfc_max_approval_date'
-    })
-
-    # Rename cfb apl max min fields
-    temp_cfb_apl_2 = temp_cfb_apl_1.rename(columns={
-        'gcdu_global_id': 'cfb_gid',
-        'min_final_crr': 'cfb_min_final_crr',
-        'max_final_crr': 'cfb_max_final_crr',
-        'min_approval_date': 'cfb_min_approval_date',
-        'max_approval_date': 'cfb_max_approval_date'
-    })
-
-    # Join back to original pair list
-    name_data_temp = pd.merge(name, temp_cfc_apl_2, on='cfc_gid', how='left')
-    name_data_temp = pd.merge(name_data_temp, temp_cfb_apl_2, on='cfb_gid', how='left')
-
-    # Filter data based on the conditions
-    name_data_temp_1 = name_data_temp[
-        (~name_data_temp['cfc_max_final_crr'].isna()) & 
-        (~name_data_temp['cfb_max_final_crr'].isna()) & 
-        (~name_data_temp['cfc_max_approval_date'].isna()) & 
-        (~name_data_temp['cfb_max_approval_date'].isna()) &
-        ~((name_data_temp['cfc_max_final_crr'] < name_data_temp['cfb_min_final_crr']) | 
-          (name_data_temp['cfb_max_final_crr'] < name_data_temp['cfc_min_final_crr']) |
-          (name_data_temp['cfc_max_approval_date'] < name_data_temp['cfb_min_approval_date']) | 
-          (name_data_temp['cfb_max_approval_date'] < name_data_temp['cfc_min_approval_date']))
-    ]
-
-    # Output filtered data
-    out_data = name_data_temp_1
+    # Save the output
     out_data.to_csv(out, index=False)
-
-    # Original pair count
-    print(f"Original pair count: {len(name)}")
-    
-    # Output pair count
-    print(f"Filtered pair count: {len(out_data)}")
