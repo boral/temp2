@@ -1,23 +1,116 @@
 import pandas as pd
+from datetime import datetime
 
 # Define variables
-model = "HF"
+model = "HF"  # HF, TF, or IN
 matchpctchar = 100
-rundt = "29APR2024"
+rundt = "22MAY2024"
+dt_cutoff = "31DEC2023"
+outpath1 = f"/data/sasdata/rmad/teams/model_development/Nirmalya/hf/scoping/hf_portfolio_scope_cfc/CFC_Portfolio_Data_for_{model}_{rundt}_{matchpctchar}.xlsx"
 
-# Load data from a file (adjust file path as needed)
-orig_scope = pd.read_csv(f'new_hf/scopedata_lean_{model}_{rundt}_{matchpctchar}.csv')
+pveq_path = "/data/sasdata/rmad/teams/model_development/Nirmalya/hf/scoping/mark/cfc_private_equity.csv"
+pvdt_path = "/data/sasdata/rmad/teams/model_development/Nirmalya/hf/scoping/mark/cfc_private_debt.csv"
+pvcr_path = "/data/sasdata/rmad/teams/model_development/Nirmalya/hf/scoping/mark/cfc_private_credit.csv"
+capc_path = "/data/sasdata/rmad/teams/model_development/Nirmalya/hf/scoping/mark/capcall.csv"
 
-# Keep specified columns and add 'model' column
-orig_scope = orig_scope[['gcdu_global_id', 'carm_type', 'carm_flag', 'gra_flag', 'customer_name']].copy()
-orig_scope['model'] = model
+matchpct = matchpctchar / 100
 
-# Frequency count for 'carm_flag' and 'carm_type'
-freq_table = pd.crosstab(orig_scope['carm_flag'], orig_scope['carm_type'], margins=True, dropna=False)
-print(freq_table)
+# Helper function to import CSV
+def import_csv(file, out):
+    data = pd.read_csv(file)
+    data.to_csv(out, index=False)
+    return data
 
-# Filter for CFCONLY
-cfc_scope = orig_scope[orig_scope['carm_flag'] == "CFCONLY"]
+# Helper function to import Excel
+def import_excel(file, sheet=None):
+    data = pd.read_excel(file, sheet_name=sheet)
+    return data
 
-# Filter for CFB
-cfb_scope = orig_scope[orig_scope['carm_type'] == "CFB"]
+# Helper function to transpose data
+def transpose_data(df, key, var, prefix):
+    temp_df = df[[key, var]]
+    transposed = temp_df.pivot(index=key, columns=var)
+    transposed.columns = [f'{prefix}_{col}' for col in transposed.columns]
+    return transposed.reset_index()
+
+# Reformat data
+def reformat(df):
+    # Automatically format the column names based on data
+    cols = [col for col in df.columns if col.startswith('appdate_')]
+    varcount = len(cols)
+    
+    print(f"Varcount: {varcount}")
+
+    # Add formatted columns dynamically
+    for i in range(1, varcount + 1):
+        df[f'appdate_{i}'] = pd.to_datetime(df[f'appdate_{i}'], errors='coerce')
+
+    return df
+
+# Portfolio map function
+def portfolio_map(model):
+    if model == "HF":
+        portfolio = "HedgeFund"
+    elif model == "TF":
+        portfolio = "TradFund"
+    elif model == "IN":
+        portfolio = "Insurance"
+    else:
+        portfolio = None
+    return portfolio
+
+portfolio = portfolio_map(model)
+
+# Assign scorecard and SIC types
+def assign_scope_identifier(df):
+    df['SCORECARD_TYPE'] = ""
+    df['SIC_TYPE'] = ""
+
+    df.loc[df['SCORECARD_NAME'].isin(HF_SCORECARD_NAME) |
+           df['CARM_SCORECARD_DESC'].isin(HF_SCORECARD_DESC) |
+           df['CREDIT_RISK_SCORECARD_GRP_DESC'].isin(HF_SCORECARD_GRP_DESC), 'SCORECARD_TYPE'] = "HedgeFund"
+    
+    df.loc[df['SCORECARD_NAME'].isin(FF_SCORECARD_NAME), 'SCORECARD_TYPE'] = "FundofFund"
+    
+    df.loc[df['SCORECARD_NAME'].isin(TF_SCORECARD_NAME) |
+           df['CARM_SCORECARD_DESC'].isin(TF_SCORECARD_DESC) |
+           df['CREDIT_RISK_SCORECARD_GRP_DESC'].isin(TF_SCORECARD_GRP_DESC), 'SCORECARD_TYPE'] = "TradFund"
+    
+    df.loc[df['SCORECARD_NAME'].isin(IN_SCORECARD_NAME) |
+           df['CARM_SCORECARD_DESC'].isin(IN_SCORECARD_DESC) |
+           df['CREDIT_RISK_SCORECARD_GRP_DESC'].isin(IN_SCORECARD_GRP_DESC), 'SCORECARD_TYPE'] = "Insurance"
+
+    df.loc[df['SIC_DESC'].str.upper().isin(HF_SIC) |
+           df['GROUP_SIC_DESC'].str.upper().isin(HF_SIC), 'SIC_TYPE'] = "HedgeFund"
+
+    df.loc[df['SIC_DESC'].str.upper().isin(TF_SIC) |
+           df['GROUP_SIC_DESC'].str.upper().isin(TF_SIC), 'SIC_TYPE'] = "TradFund"
+    
+    df.loc[df['SIC_DESC'].str.upper().isin(IN_SIC) |
+           df['GROUP_SIC_DESC'].str.upper().isin(IN_SIC), 'SIC_TYPE'] = "Insurance"
+
+    return df
+
+# Transpose and merge all dataframes
+def transpose_all(df, key):
+    df.sort_values(by=[key, 'APPROVAL_DATE'], inplace=True)
+
+    transposed_carmins = transpose_data(df, key, 'CARM_INSTANCE', 'carmins')
+    transposed_appdate = transpose_data(df, key, 'APPROVAL_DATE', 'appdate')
+    transposed_scorename = transpose_data(df, key, 'SCORECARD_NAME', 'scorename')
+    transposed_scoredesc = transpose_data(df, key, 'CARM_SCORECARD_DESC', 'scoredesc')
+    transposed_sgrpdesc = transpose_data(df, key, 'CREDIT_RISK_SCORECARD_GRP_DESC', 'sgrpdesc')
+    transposed_scoretype = transpose_data(df, key, 'SCORECARD_TYPE', 'scoretype')
+    transposed_sicdesc = transpose_data(df, key, 'SIC_DESC', 'sicdesc')
+    transposed_sicgrpdesc = transpose_data(df, key, 'GROUP_SIC_DESC', 'sicgrpdesc')
+    transposed_sictype = transpose_data(df, key, 'SIC_TYPE', 'sictype')
+
+    merged_df = pd.concat([transposed_appdate, transposed_scorename, transposed_scoredesc, 
+                           transposed_sgrpdesc, transposed_scoretype, transposed_sicdesc,
+                           transposed_sicgrpdesc, transposed_sictype, transposed_carmins], axis=1)
+    
+    return reformat(merged_df)
+
+# Example usage
+# data = import_csv(pveq_path, 'output.csv')
+# transposed_data = transpose_all(data, 'gcdu_global_id')
