@@ -1,87 +1,80 @@
-```python
-def calculate_metrics(input_df, model, portfolio, dt_cutoff):
+def gra_assessment_cfc(in_data, matchpct, portfolio):
     import pandas as pd
-    import numpy as np
 
-    df = input_df.copy()
+    data = pd.DataFrame(in_data)
+    data['GRA_ASSESSMENT'] = ""
+    data['GRA_FLAG'] = ""
 
-    # 1. Scorecard counts
-    df['TOTAL_SCORECARD_COUNT'] = df.filter(like='scoretype_').notna().sum(axis=1)
-    df['TF_SCORECARD_COUNT'] = (df.filter(like='scoretype_') == "TradFund").sum(axis=1)
-    df['HF_SCORECARD_COUNT'] = (df.filter(like='scoretype_') == "HedgeFund").sum(axis=1)
-    df['FF_SCORECARD_COUNT'] = (df.filter(like='scoretype_') == "FundofFund").sum(axis=1)
-    df['IN_SCORECARD_COUNT'] = (df.filter(like='scoretype_') == "Insurance").sum(axis=1)
-    df['OT_SCORECARD_COUNT'] = (df.filter(like='scoretype_') == "Other").sum(axis=1)
-    df['MODEL_SCORECARD_COUNT'] = df[f'{model}_SCORECARD_COUNT']
+    for index, row in data.iterrows():
+        if row['MODEL_SCORECARD_PCT'] >= matchpct and row['MODEL_SIC_PCT'] == 1:
+            data.at[index, 'GRA_ASSESSMENT'] = f"Both Scorecards and SIC Codes fully aligned with {portfolio}."
+            data.at[index, 'GRA_FLAG'] = portfolio
+        elif row['MODEL_SCORECARD_PCT'] >= matchpct and row['MODEL_SIC_PCT'] < 1:
+            data.at[index, 'GRA_ASSESSMENT'] = f"Scorecards fully and SIC Codes partially aligned with {portfolio}."
+            data.at[index, 'GRA_FLAG'] = f"{portfolio} (check SIC code)"
+        elif row['MODEL_SCORECARD_PCT'] < matchpct and row['MODEL_SCORECARD_PCT'] > 0 and row['MODEL_SIC_PCT'] == 1:
+            data.at[index, 'GRA_ASSESSMENT'] = f"Scorecards partially and SIC Codes fully aligned with {portfolio}."
+            data.at[index, 'GRA_FLAG'] = "Inconclusive"
+        elif row['MODEL_SCORECARD_PCT'] < matchpct and row['MODEL_SCORECARD_PCT'] > 0 and row['MODEL_SIC_PCT'] < 1:
+            data.at[index, 'GRA_ASSESSMENT'] = f"Both Scorecards and SIC Codes partially aligned with {portfolio}."
+            data.at[index, 'GRA_FLAG'] = "Inconclusive"
+        elif row['MODEL_SCORECARD_PCT'] <= 0 and row['MODEL_SIC_PCT'] == 1:
+            data.at[index, 'GRA_ASSESSMENT'] = f"Never rated with {portfolio} and SIC Codes fully aligned with {portfolio}."
+            data.at[index, 'GRA_FLAG'] = "Inconclusive"
+        elif row['MODEL_SCORECARD_PCT'] <= 0 and row['MODEL_SIC_PCT'] < 1:
+            data.at[index, 'GRA_ASSESSMENT'] = f"Never rated with {portfolio} and SIC Codes partially aligned with {portfolio}."
+            data.at[index, 'GRA_FLAG'] = "Inconclusive"
+        else:
+            data.at[index, 'GRA_ASSESSMENT'] = "Other issues"
+            data.at[index, 'GRA_FLAG'] = "Inconclusive"
 
-    # 2. SIC counts
-    df['TOTAL_SIC_COUNT'] = df.filter(like='sictype_').notna().sum(axis=1)
-    df['TF_SIC_COUNT'] = (df.filter(like='sictype_') == "TradFund").sum(axis=1)
-    df['HF_SIC_COUNT'] = (df.filter(like='sictype_') == "HedgeFund").sum(axis=1)
-    df['IN_SIC_COUNT'] = (df.filter(like='sictype_') == "Insurance").sum(axis=1)
-    df['OT_SIC_COUNT'] = (df.filter(like='sictype_') == "Other").sum(axis=1)
-    df['MODEL_SIC_COUNT'] = df[f'{model}_SIC_COUNT']
+        if portfolio == "HedgeFund" and row['SECOND_MAX_SCORECARD_TYPE'] == "FundofFund":
+            if row['SECOND_MAX_SCORECARD_PCT'] >= matchpct and row['MODEL_SIC_PCT'] == 1:
+                data.at[index, 'GRA_ASSESSMENT'] = f"Scorecards fully aligned with {row['SECOND_MAX_SCORECARD_TYPE']} and SIC Codes fully aligned with {portfolio}."
+                data.at[index, 'GRA_FLAG'] = "FundofFund"
+            elif row['SECOND_MAX_SCORECARD_PCT'] >= matchpct and row['MODEL_SIC_PCT'] < 1:
+                data.at[index, 'GRA_ASSESSMENT'] = f"Scorecards fully aligned with {row['SECOND_MAX_SCORECARD_TYPE']} and SIC Codes partially aligned with {portfolio}."
+                data.at[index, 'GRA_FLAG'] = "FundofFund (check SIC code)"
 
-    # 3. Scorecard durations
-    def calculate_durations(df, rating_col, dt_col):
-        total_dur = []
-        for index, row in df.iterrows():
-            durations = []
-            for i in range(len(row[rating_col])):
-                if pd.notna(row[dt_col][i]):
-                    next_rating_date = row[dt_col][i+1] if i+1 < len(row[rating_col]) else dt_cutoff
-                    dur = (next_rating_date - row[dt_col][i]).days / 30
-                    if next_rating_date == dt_cutoff and dur > 18:
-                        dur = 18
-                    durations.append(dur)
-            total_dur.append(sum(durations))
-        return total_dur
+    return data
 
-    df['TOTAL_RATING_DUR'] = calculate_durations(df, 'scoretype_', 'appdate_')
-    df['TF_SCORECARD_DUR'] = calculate_durations(df[df['scoretype_'] == "TradFund"], 'scoretype_', 'appdate_')
-    df['HF_SCORECARD_DUR'] = calculate_durations(df[df['scoretype_'] == "HedgeFund"], 'scoretype_', 'appdate_')
-    df['FF_SCORECARD_DUR'] = calculate_durations(df[df['scoretype_'] == "FundofFund"], 'scoretype_', 'appdate_')
-    df['IN_SCORECARD_DUR'] = calculate_durations(df[df['scoretype_'] == "Insurance"], 'scoretype_', 'appdate_')
-    df['OT_SCORECARD_DUR'] = calculate_durations(df[df['scoretype_'] == "Other"], 'scoretype_', 'appdate_')
-    df['MODEL_SCORECARD_DUR'] = df[f'{model}_SCORECARD_DUR']
 
-    # 4. SIC durations
-    df['TOTAL_SIC_DUR'] = calculate_durations(df, 'sictype_', 'appdate_')
-    df['TF_SIC_DUR'] = calculate_durations(df[df['sictype_'] == "TradFund"], 'sictype_', 'appdate_')
-    df['HF_SIC_DUR'] = calculate_durations(df[df['sictype_'] == "HedgeFund"], 'sictype_', 'appdate_')
-    df['IN_SIC_DUR'] = calculate_durations(df[df['sictype_'] == "Insurance"], 'sictype_', 'appdate_')
-    df['OT_SIC_DUR'] = calculate_durations(df[df['sictype_'] == "Other"], 'sictype_', 'appdate_')
-    df['MODEL_SIC_DUR'] = df[f'{model}_SIC_DUR']
+def gra_assessment_cfb(in_data, matchpct, portfolio):
+    import pandas as pd
 
-    # 5. 2nd max scorecard
-    def second_max_scorecard(df, portfolio):
-        second_max_type, second_max_count, second_max_dur = [], [], []
-        for index, row in df.iterrows():
-            types = ["HedgeFund", "FundofFund", "TradFund", "Insurance", "Other"]
-            counts = [row['HF_SCORECARD_COUNT'], row['FF_SCORECARD_COUNT'], row['TF_SCORECARD_COUNT'],
-                      row['IN_SCORECARD_COUNT'], row['OT_SCORECARD_COUNT']]
-            durations = [row['HF_SCORECARD_DUR'], row['FF_SCORECARD_DUR'], row['TF_SCORECARD_DUR'],
-                         row['IN_SCORECARD_DUR'], row['OT_SCORECARD_DUR']]
-            max_dur_idx = np.argmax(durations) if portfolio not in types else np.argmax([d for i, d in enumerate(durations) if types[i] != portfolio])
-            second_max_type.append(types[max_dur_idx])
-            second_max_count.append(counts[max_dur_idx])
-            second_max_dur.append(durations[max_dur_idx])
-        return second_max_type, second_max_count, second_max_dur
+    data = pd.DataFrame(in_data)
+    data['GRA_ASSESSMENT'] = ""
+    data['GRA_FLAG'] = ""
 
-    df['SECOND_MAX_SCORECARD_TYPE'], df['SECOND_MAX_SCORECARD_COUNT'], df['SECOND_MAX_SCORECARD_DUR'] = second_max_scorecard(df, portfolio)
+    for index, row in data.iterrows():
+        if row['MODEL_SCORECARD_PCT'] >= matchpct and row['MODEL_SIC_PCT'] == 1:
+            data.at[index, 'GRA_ASSESSMENT'] = f"Both Scorecards and SIC Codes fully aligned with {portfolio}."
+            data.at[index, 'GRA_FLAG'] = portfolio
+        elif row['MODEL_SCORECARD_PCT'] >= matchpct and row['MODEL_SIC_PCT'] < 1:
+            data.at[index, 'GRA_ASSESSMENT'] = f"Scorecards fully and SIC Codes partially aligned with {portfolio}."
+            data.at[index, 'GRA_FLAG'] = f"{portfolio} (check SIC code)"
+        elif row['MODEL_SCORECARD_PCT'] < matchpct and row['MODEL_SCORECARD_PCT'] > 0 and row['MODEL_SIC_PCT'] == 1:
+            data.at[index, 'GRA_ASSESSMENT'] = f"Scorecards partially and SIC Codes fully aligned with {portfolio}."
+            data.at[index, 'GRA_FLAG'] = "Inconclusive"
+        elif row['MODEL_SCORECARD_PCT'] < matchpct and row['MODEL_SCORECARD_PCT'] > 0 and row['MODEL_SIC_PCT'] < 1:
+            data.at[index, 'GRA_ASSESSMENT'] = f"Both Scorecards and SIC Codes partially aligned with {portfolio}."
+            data.at[index, 'GRA_FLAG'] = "Inconclusive"
+        elif row['MODEL_SCORECARD_PCT'] <= 0 and row['MODEL_SIC_PCT'] == 1:
+            data.at[index, 'GRA_ASSESSMENT'] = f"Never rated with {portfolio} and SIC Codes fully aligned with {portfolio}."
+            data.at[index, 'GRA_FLAG'] = "Inconclusive"
+        elif row['MODEL_SCORECARD_PCT'] <= 0 and row['MODEL_SIC_PCT'] < 1:
+            data.at[index, 'GRA_ASSESSMENT'] = f"Never rated with {portfolio} and SIC Codes partially aligned with {portfolio}."
+            data.at[index, 'GRA_FLAG'] = "Inconclusive"
+        else:
+            data.at[index, 'GRA_ASSESSMENT'] = "Other issues"
+            data.at[index, 'GRA_FLAG'] = "Inconclusive"
 
-    # 6. 2nd max SIC
-    df['SECOND_MAX_SIC_TYPE'], df['SECOND_MAX_SIC_COUNT'], df['SECOND_MAX_SIC_DUR'] = second_max_scorecard(df, portfolio)
+        if portfolio == "HedgeFund" and row['SECOND_MAX_SCORECARD_TYPE'] == "FundofFund":
+            if row['SECOND_MAX_SCORECARD_PCT'] >= matchpct and row['MODEL_SIC_PCT'] == 1:
+                data.at[index, 'GRA_ASSESSMENT'] = f"Scorecards fully aligned with {row['SECOND_MAX_SCORECARD_TYPE']} and SIC Codes fully aligned with {portfolio}."
+                data.at[index, 'GRA_FLAG'] = "FundofFund"
+            elif row['SECOND_MAX_SCORECARD_PCT'] >= matchpct and row['MODEL_SIC_PCT'] < 1:
+                data.at[index, 'GRA_ASSESSMENT'] = f"Scorecards fully aligned with {row['SECOND_MAX_SCORECARD_TYPE']} and SIC Codes partially aligned with {portfolio}."
+                data.at[index, 'GRA_FLAG'] = "FundofFund (check SIC code)"
 
-    # 7. First and last ratings
-    df['FIRST_RATING_DATE'] = df.filter(like='appdate_').min(axis=1)
-    df['LAST_RATING_DATE'] = df.filter(like='appdate_').max(axis=1)
-
-    # 8. Metrics
-    df['MODEL_SCORECARD_PCT'] = df['MODEL_SCORECARD_COUNT'] / df['TOTAL_SCORECARD_COUNT']
-    df['MODEL_SCORECARD_DUR_PCT'] = df['MODEL_SCORECARD_DUR'] / df['TOTAL_RATING_DUR']
-    df['MODEL_SIC_PCT'] = df['MODEL_SIC_COUNT'] / df['TOTAL_SIC_COUNT']
-    df['MODEL_SIC_DUR_PCT'] = df['MODEL_SIC_DUR'] / df['TOTAL_SIC_DUR']
-
-    return df
-```
+    return data
