@@ -1,137 +1,36 @@
-```python
-def create_lean_data(in_data, out_data, model):
-    query = f"""
-    CREATE TABLE {out_data} AS
-    SELECT GCDU_GLOBAL_ID, CARM_TYPE, CARM_FLAG, CUSTOMER_NAME,
-    """
-    if model == 'HF':
-        query += "PE_FLAG, PE_NAME,\n"
+# Load rating data
+apl_grade = pd.read_csv('corp_psf/apl_grade_combined_15MAR2024.csv')
 
-    query += """
-    GRA_ASSESSMENT, GRA_FLAG, TOTAL_RATING_COUNT,
-    LAST_SCORECARD_TYPE, LAST_SCORECARD_NAME, LAST_SIC_TYPE, LAST_SIC_DESC, LAST_SIC_GRP_DESC,
-    FIRST_RATING_DATE, MODEL_FIRST_RATING_DATE,
-    LAST_RATING_DATE, MODEL_LAST_RATING_DATE,
-    MODEL_SCORECARD_PCT, MODEL_SIC_PCT,
-    SECOND_MAX_SCORECARD_TYPE, SECOND_MAX_SCORECARD_PCT, 
-    SECOND_MAX_SIC_TYPE, SECOND_MAX_SIC_PCT,
-    TOTAL_RATING_COUNT, MODEL_SCORECARD_COUNT, MODEL_SIC_COUNT, SECOND_MAX_SCORECARD_COUNT,
-    NONMODEL_LAST_RATING_DATE, NONMODEL_LAST_SCORECARD_TYPE
-    FROM {in_data};
-    """
+# Check initial counts
+initial_count = len(apl_grade)
+distinct_gcdu_global_id_count = len(apl_grade['gcdu_global_id'].unique())
 
-    # Assuming this part is executed in a SQL execution environment
-    # Execute SQL query (this line should be adapted based on your execution context)
-    # execute_sql(query)
+# Filter rating data
+apl_grade = apl_grade[apl_grade['approval_date'].notnull() &
+                      apl_grade['GCDU_GLOBAL_ID'].notnull() &
+                      (apl_grade['APPLICATION_TYPE_CODE'] != "CN") &
+                      (apl_grade['APPLICATION_STATUS_CODE'] == "A")]
 
-# Define scope identifiers
-TF_SCORECARD_NAME = [
-    'FUND', 'MANDATED FUND', 'NBFI-TFUND', 'P TRADFDS', 'PSF_001164',
-    'P_TRADFDS', 'TRADFDS', 'TRADFUNDPD', 'TRDFUNDS', 'USER32'
-]
+# Identify model gids
+apl_grade_model_gid = identify_model_gid(apl=apl_grade, model=model)
 
-TF_SCORECARD_DESC = [
-    '032-HGHQ Traditional Funds v2', 'HGHQ Traditional Funds v2',
-    'NBFI NBFI-TFUND', 'NBFI PSF - TRADITIONAL FUNDS', 
-    'PSF - Traditional Funds PD v2.0 Parent', 
-    '16 - Manual - NBFI traditional funds', 
-    'Manual - NBFI Traditional Funds', 'NBFI - TRADITIONAL FUNDS',
-    'TRADITIONAL FUNDS PD MODEL', 'TRADITIONAL FUNDS',
-    'NBFI Traditional Funds v2', 'Funds CRR Proxy Tool'
-]
+# Initial count of model gids
+initial_model_gid_count = len(apl_grade_model_gid['gcdu_global_id'].unique())
 
-TF_SCORECARD_GRP_DESC = [
-    'HGHQ Traditional Funds v2', 'PSF-Traditional Funds PD v2.0 Parent'
-]
+# Add private equity gids (for HF only)
+if model == "HF":
+    # Load private equity gids
+    pvt_gid = load_pvt_data(pveq_path=pveq_path, pvdt_path=pvdt_path, 
+                             pvcr_path=pvcr_path, capc_path=capc_path)
 
-TF_SIC = 'FUND MANAGER (AS AGENT FOR TRADITIONAL FUND)'
+    # Add private equity gids to model gids
+    apl_grade_model_gid = pd.concat([apl_grade_model_gid, pvt_gid]).drop_duplicates(subset='gcdu_global_id')
 
-HF_SCORECARD_NAME = [
-    'HEDGE FUND', 'HEDGE FUND 2010', 'HEDGEFUNDS', 'HEDGFDS',
-    'MANDATE HEDGE FUND', 'NBFI-HEDGE', 'P HEDGFDS', 
-    'P_HEDGFDS', 'USER15'
-]
+# Revised count of model gids
+revised_model_gid_count = len(apl_grade_model_gid['gcdu_global_id'].unique())
 
-HF_SCORECARD_DESC = [
-    '027-HGHQ HEDGE FUNDS V2', '17 - MANUAL - NBFI HEDGE FUNDS',
-    'HEDGE FUND DST', 'HEDGE FUNDS', 'MANUAL - NBFI HEDGE FUNDS',
-    'NBFI - HEDGE FUNDS', 'NBFI HEDGE FUNDS V2', 
-    'NBFI PSF - HEDGE FUNDS', 'NBFI PSF - HEDGEFUNDS',
-    'PB CRR HEDGE FUND MANAGER METHODOLOGY'
-]
+# Extract apl data for model gids
+apl_grade_model_all = apl_grade[apl_grade['GCDU_GLOBAL_ID'].isin(apl_grade_model_gid['GCDU_GLOBAL_ID'])]
 
-HF_SCORECARD_GRP_DESC = [
-    'HBUS PB CRR HEDGE FUND MGR METHODOLOGY', 
-    'HGHQ HEDGE FUNDS V2', 'PSF HEDGE FUND',
-    'HBUS PB CRR HEDGE FUND MGR METHODOLOGY'
-]
-
-HF_SIC = 'FUND MANAGER (AS HEDGE FUND)'
-
-FF_SCORECARD_NAME = ['FUND OF FUND', 'FUND OF FUND 2010']
-
-IN_SCORECARD_NAME = [
-    'COMPINS', 'COMPINS', 'GB LIFE', 'GB NLIFE', 'GB NLIFE', 
-    'GB REIN', 'GINSREINS', 'GLINSLIFE', 'GLINSNLIFE', 
-    'GLOBAL COMPOSITE', 'GLOBAL LIFE', 'GLOBAL NON-LIFE', 
-    'GLOBAL REINSURANCE', 'INSCOMINS', 'NBFI LIFE', 
-    'NBFI-COINS', 'NBFI-COINS', 'NBFI-LIFE', 'NBFI-LIFE', 
-    'NBFI-LIFE', 'NBFI-NLIFE', 'NBFI-NLIFE', 'NBFI-NLIFE', 
-    'NBFI-NLIFE', 'NBFI-NLIFE', 'NBFI-REINS', 'NBFI-REINS', 
-    'NBFI-REINS', 'NBFI-UNLIF', 'P COMPINS', 'P GB LIFE', 
-    'P GB NLIFE', 'P GB REIN', 'P US LIFE', 'P US NLIFE', 
-    'PSFCOMPINS', 'PSFCOMPINS', 'PSFLINS', 'PSFNLINS', 
-    'PSFNLINS', 'PSFREINS', 'P_COMPINS', 'P_GB_LIFE', 
-    'P_GB_NLIFE', 'P_GB_REIN', 'P_US_LIFE', 'P_US_NLIFE', 
-    'US LIFE', 'US LIFE', 'US NLIFE', 'US NON-LIFE', 
-    'USINSLIFE', 'USINSNLIFE', 'PSF_001155', 'PSF_001156', 
-    'PSF_001157', 'PSF_001158', 'PSF_001160', 'PSF_001161'
-]
-
-IN_SCORECARD_DESC = [
-    'NBFI COMPOSITE INSURANCE', 'NBFI LIFE INSURANCE',
-    'NBFI Global Reinsurance', 'NBFI US Non Life Insurance',
-    'NBFI Composite Insurance', 'INSURANCE-US LIFE',
-    'INSURANCE-US NON-LIFE', 'INSURANCE-GLOBAL LIFE',
-    'INSURANCE-GLOBAL NON-LIFE', 'INSURANCE-GLOBAL REINSURANCE',
-    'INSURANCE-COMPOSITE', 'INSURANCE DST', 
-    'NBFI Global Life Insurance', 'NBFI Global Non Life Insurance',
-    "018-HGHQ Composite Insurance PSF", "020-HGHQ Composite Insurance PSF",
-    "024-HGHQ Global Life Insurance PSF", "024-HGHQ Global Non Life Insurance PSF",
-    "026-HGHQ Global Non Life Insurance PSF", 
-    "13b-PSF-Global Life Ins PD v1.0 Parent", 
-    "14b-PSF-Global Non Life Ins PD v1.0 Par", 
-    "15b-PSF-NBFI Composite PD v1.0 Parent", 
-    "NBFI PSF - GLOBAL INSURANCE - LIFE", 
-    "NBFI PSF - GLOBAL INSURANCE - NONLIFE", 
-    "NBFI PSF - GLOBAL INSURANCE - RE-INS", 
-    "NBFI PSF - INSURANCE-COMPOSITE INS", 
-    "NBFI PSF - US INSURANCE - LIFE", 
-    "NBFI PSF - US INSURANCE - NON-LIFE", 
-    "PSF - Non Life Insurance PD v1.0 Parent", 
-    "PSF-Global Life Insurance PD v1.0 Parent", 
-    "PSF-Global Non Life Ins PD v1.0 Parent", 
-    "PSF-Global Reinsurance PD v1.0 Parent", 
-    "PSF-NBFI Composite PD v1.0 Parent", 
-    "PSF-US Life Insurance PD v1.0 Parent"
-]
-
-IN_SCORECARD_GRP_DESC = [
-    "HGHQ Global Non Life Insurance", "HGHQ US Life Insurance", 
-    "HGHQ US Non Life Insurance", "GLOBAL NON-LIFE - PSF", 
-    "PSF GLOBAL COMPOSITE", "PSF GLOBAL LIFE INSURANCE", 
-    "PSF US LIFE INSURANCE", "PSF US NON-LIFE INSURANCE", 
-    "PSF-Global Life Insurance PD v1.0 Parent", 
-    "PSF-Global Non Life Ins PD v1.0 Parent", 
-    "PSF-Global Reinsurance PD v1.0 Parent", 
-    "PSF-NBFI Composite PD v1.0 Parent", 
-    "PSF-Non Life Insurance PD v1.0 Parent", 
-    "PSF-US Life Insurance PD v1.0 Parent"
-]
-
-IN_SIC = [
-    'NON-LIFE INSURANCE', 'LIFE INSURANCE', 
-    'ACTIVITIES AUXILIARY TO INSURANCE AND PENSION FUND', 
-    'PENSION FUNDING'
-]
-```
+# Count of gids with rating data
+count_with_rating_data = len(apl_grade_model_all['gcdu_global_id'].unique())
