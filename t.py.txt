@@ -1,11 +1,23 @@
-def apl_history(in_data, apl_data, out):
-    import pandas as pd
+import pandas as pd
 
-    # Remove duplicates by 'gcdu_global_id'
-    temp_apl_hist = in_data.drop_duplicates(subset='gcdu_global_id')
+# Define variables
+model = "HF"
+matchpctchar = 100
+rundt = "29APR2024"
 
-    # Inner join on 'gcdu_global_id'
-    out_data = pd.merge(apl_data, temp_apl_hist[['gcdu_global_id']], on='gcdu_global_id', how='inner')
+# Load data from a file (adjust file path as needed)
+orig_scope = pd.read_csv(f'new_hf/scopedata_lean_{model}_{rundt}_{matchpctchar}.csv')
 
-    # Save the output
-    out_data.to_csv(out, index=False)
+# Keep specified columns and add 'model' column
+orig_scope = orig_scope[['gcdu_global_id', 'carm_type', 'carm_flag', 'gra_flag', 'customer_name']].copy()
+orig_scope['model'] = model
+
+# Frequency count for 'carm_flag' and 'carm_type'
+freq_table = pd.crosstab(orig_scope['carm_flag'], orig_scope['carm_type'], margins=True, dropna=False)
+print(freq_table)
+
+# Filter for CFCONLY
+cfc_scope = orig_scope[orig_scope['carm_flag'] == "CFCONLY"]
+
+# Filter for CFB
+cfb_scope = orig_scope[orig_scope['carm_type'] == "CFB"]
