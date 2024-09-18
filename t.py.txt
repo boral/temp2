@@ -1,80 +1,56 @@
-def gra_assessment_cfc(in_data, matchpct, portfolio):
+```python
+def load_pvt_data(pveq_path, pvdt_path, pvcr_path, capc_path, out):
+    import pandas as pd
+    
+    pvteq = pd.read_csv(pveq_path)
+    pvtdt = pd.read_csv(pvdt_path)
+    pvtcr = pd.read_csv(pvcr_path)
+    capcall = pd.read_csv(capc_path)
+
+    pvteq['PE_FLAG'] = "PVEQ"
+    pvteq['PE_FLAG2'] = 1
+    pvteq['PE_NAME'] = pvteq['customer_name']
+    
+    pvtdt['PE_FLAG'] = "PVDT"
+    pvtdt['PE_FLAG2'] = 1
+    pvtdt['PE_NAME'] = pvtdt['customer_name']
+    
+    pvtcr['PE_FLAG'] = "PVCR"
+    pvtcr['PE_FLAG2'] = 1
+    pvtcr['PE_NAME'] = pvtcr['customer_name']
+    
+    capcall['PE_FLAG'] = "CAPC"
+    capcall['PE_FLAG2'] = 2
+    
+    pvt_all = pd.concat([pvteq, pvtdt, pvtcr, capcall], ignore_index=True)
+    pvt = pvt_all[pvt_all['gcdu_global_id'].notna()]
+
+    pvt = pvt.sort_values(by=['gcdu_global_id', 'PE_FLAG2'], ascending=[True, False]).drop_duplicates(subset='gcdu_global_id')
+
+    pvt[out] = pvt[['gcdu_global_id', 'PE_FLAG', 'PE_NAME']]
+
+    rpt_pvt_gid_miss = pvt_all[pvt_all['gcdu_global_id'].isna()]
+
+    rpt_pvt_capc_common = pvt_all[(pvt_all['gcdu_global_id'].notna()) & 
+                                   (pvt_all['PE_FLAG'] != "CAPC") & 
+                                   (pvt_all['gcdu_global_id'].isin(pvt_all[pvt_all['PE_FLAG'] == "CAPC"]['gcdu_global_id']))]
+    
+def add_carm_flag(in_data, out_data):
     import pandas as pd
 
-    data = pd.DataFrame(in_data)
-    data['GRA_ASSESSMENT'] = ""
-    data['GRA_FLAG'] = ""
+    a = pd.read_csv(in_data)
+    b = pd.read_csv('carmflag.csv')
 
-    for index, row in data.iterrows():
-        if row['MODEL_SCORECARD_PCT'] >= matchpct and row['MODEL_SIC_PCT'] == 1:
-            data.at[index, 'GRA_ASSESSMENT'] = f"Both Scorecards and SIC Codes fully aligned with {portfolio}."
-            data.at[index, 'GRA_FLAG'] = portfolio
-        elif row['MODEL_SCORECARD_PCT'] >= matchpct and row['MODEL_SIC_PCT'] < 1:
-            data.at[index, 'GRA_ASSESSMENT'] = f"Scorecards fully and SIC Codes partially aligned with {portfolio}."
-            data.at[index, 'GRA_FLAG'] = f"{portfolio} (check SIC code)"
-        elif row['MODEL_SCORECARD_PCT'] < matchpct and row['MODEL_SCORECARD_PCT'] > 0 and row['MODEL_SIC_PCT'] == 1:
-            data.at[index, 'GRA_ASSESSMENT'] = f"Scorecards partially and SIC Codes fully aligned with {portfolio}."
-            data.at[index, 'GRA_FLAG'] = "Inconclusive"
-        elif row['MODEL_SCORECARD_PCT'] < matchpct and row['MODEL_SCORECARD_PCT'] > 0 and row['MODEL_SIC_PCT'] < 1:
-            data.at[index, 'GRA_ASSESSMENT'] = f"Both Scorecards and SIC Codes partially aligned with {portfolio}."
-            data.at[index, 'GRA_FLAG'] = "Inconclusive"
-        elif row['MODEL_SCORECARD_PCT'] <= 0 and row['MODEL_SIC_PCT'] == 1:
-            data.at[index, 'GRA_ASSESSMENT'] = f"Never rated with {portfolio} and SIC Codes fully aligned with {portfolio}."
-            data.at[index, 'GRA_FLAG'] = "Inconclusive"
-        elif row['MODEL_SCORECARD_PCT'] <= 0 and row['MODEL_SIC_PCT'] < 1:
-            data.at[index, 'GRA_ASSESSMENT'] = f"Never rated with {portfolio} and SIC Codes partially aligned with {portfolio}."
-            data.at[index, 'GRA_FLAG'] = "Inconclusive"
-        else:
-            data.at[index, 'GRA_ASSESSMENT'] = "Other issues"
-            data.at[index, 'GRA_FLAG'] = "Inconclusive"
+    out = pd.merge(a, b, on='gcdu_global_id', how='left')
+    out.to_csv(out_data, index=False)
 
-        if portfolio == "HedgeFund" and row['SECOND_MAX_SCORECARD_TYPE'] == "FundofFund":
-            if row['SECOND_MAX_SCORECARD_PCT'] >= matchpct and row['MODEL_SIC_PCT'] == 1:
-                data.at[index, 'GRA_ASSESSMENT'] = f"Scorecards fully aligned with {row['SECOND_MAX_SCORECARD_TYPE']} and SIC Codes fully aligned with {portfolio}."
-                data.at[index, 'GRA_FLAG'] = "FundofFund"
-            elif row['SECOND_MAX_SCORECARD_PCT'] >= matchpct and row['MODEL_SIC_PCT'] < 1:
-                data.at[index, 'GRA_ASSESSMENT'] = f"Scorecards fully aligned with {row['SECOND_MAX_SCORECARD_TYPE']} and SIC Codes partially aligned with {portfolio}."
-                data.at[index, 'GRA_FLAG'] = "FundofFund (check SIC code)"
-
-    return data
-
-
-def gra_assessment_cfb(in_data, matchpct, portfolio):
+def add_cus_name(in_data, apl_data, out_data):
     import pandas as pd
 
-    data = pd.DataFrame(in_data)
-    data['GRA_ASSESSMENT'] = ""
-    data['GRA_FLAG'] = ""
+    temp_cusname = pd.read_csv(apl_data)[['gcdu_global_id', 'customer_name', 'approval_date']]
+    temp_cusname = temp_cusname.sort_values(by=['gcdu_global_id', 'approval_date'], ascending=[True, False]).drop_duplicates(subset='gcdu_global_id')
 
-    for index, row in data.iterrows():
-        if row['MODEL_SCORECARD_PCT'] >= matchpct and row['MODEL_SIC_PCT'] == 1:
-            data.at[index, 'GRA_ASSESSMENT'] = f"Both Scorecards and SIC Codes fully aligned with {portfolio}."
-            data.at[index, 'GRA_FLAG'] = portfolio
-        elif row['MODEL_SCORECARD_PCT'] >= matchpct and row['MODEL_SIC_PCT'] < 1:
-            data.at[index, 'GRA_ASSESSMENT'] = f"Scorecards fully and SIC Codes partially aligned with {portfolio}."
-            data.at[index, 'GRA_FLAG'] = f"{portfolio} (check SIC code)"
-        elif row['MODEL_SCORECARD_PCT'] < matchpct and row['MODEL_SCORECARD_PCT'] > 0 and row['MODEL_SIC_PCT'] == 1:
-            data.at[index, 'GRA_ASSESSMENT'] = f"Scorecards partially and SIC Codes fully aligned with {portfolio}."
-            data.at[index, 'GRA_FLAG'] = "Inconclusive"
-        elif row['MODEL_SCORECARD_PCT'] < matchpct and row['MODEL_SCORECARD_PCT'] > 0 and row['MODEL_SIC_PCT'] < 1:
-            data.at[index, 'GRA_ASSESSMENT'] = f"Both Scorecards and SIC Codes partially aligned with {portfolio}."
-            data.at[index, 'GRA_FLAG'] = "Inconclusive"
-        elif row['MODEL_SCORECARD_PCT'] <= 0 and row['MODEL_SIC_PCT'] == 1:
-            data.at[index, 'GRA_ASSESSMENT'] = f"Never rated with {portfolio} and SIC Codes fully aligned with {portfolio}."
-            data.at[index, 'GRA_FLAG'] = "Inconclusive"
-        elif row['MODEL_SCORECARD_PCT'] <= 0 and row['MODEL_SIC_PCT'] < 1:
-            data.at[index, 'GRA_ASSESSMENT'] = f"Never rated with {portfolio} and SIC Codes partially aligned with {portfolio}."
-            data.at[index, 'GRA_FLAG'] = "Inconclusive"
-        else:
-            data.at[index, 'GRA_ASSESSMENT'] = "Other issues"
-            data.at[index, 'GRA_FLAG'] = "Inconclusive"
-
-        if portfolio == "HedgeFund" and row['SECOND_MAX_SCORECARD_TYPE'] == "FundofFund":
-            if row['SECOND_MAX_SCORECARD_PCT'] >= matchpct and row['MODEL_SIC_PCT'] == 1:
-                data.at[index, 'GRA_ASSESSMENT'] = f"Scorecards fully aligned with {row['SECOND_MAX_SCORECARD_TYPE']} and SIC Codes fully aligned with {portfolio}."
-                data.at[index, 'GRA_FLAG'] = "FundofFund"
-            elif row['SECOND_MAX_SCORECARD_PCT'] >= matchpct and row['MODEL_SIC_PCT'] < 1:
-                data.at[index, 'GRA_ASSESSMENT'] = f"Scorecards fully aligned with {row['SECOND_MAX_SCORECARD_TYPE']} and SIC Codes partially aligned with {portfolio}."
-                data.at[index, 'GRA_FLAG'] = "FundofFund (check SIC code)"
-
-    return data
+    a = pd.read_csv(in_data)
+    out = pd.merge(a, temp_cusname, on='gcdu_global_id', how='left')
+    out.to_csv(out_data, index=False)
+```
