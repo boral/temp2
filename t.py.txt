@@ -1,61 +1,44 @@
 ```python
-# Assign scope identifiers i.e. SCORECARD_TYPE and SIC_TYPE
-# Assign scope identifier
-assign_scope_identifier(in='apl_grade_model_all', out='apl_grade_model_all')
+import pandas as pd
 
-# Apply date cutoff filter
-# Drop records with approval date after cutoff date
-apl_grade_model_cutoff = apl_grade_model_all[apl_grade_model_all['approval_date'] <= dt_cutoff]
+# Add CARM_TYPE
+Data_for_Scorecard_CFB = pd.read_csv('Data_for_Scorecard_CFB.csv')  # Replace with the actual file path
+Data_for_Scorecard_CFB['CARM_TYPE'] = "CFB"
 
-count_after_cutoff = apl_grade_model_cutoff['gcdu_global_id'].nunique()
-print(f"count after date cutoff: {count_after_cutoff}")  # final in-scope count from carm
+Data_for_Scorecard_CFC = pd.read_csv('Data_for_Scorecard_CFC.csv')  # Replace with the actual file path
+Data_for_Scorecard_CFC['CARM_TYPE'] = "CFC"
 
-# Report private gids which do not have rating data (for HF only)
+# Combine CFB and CFC data
+Data_for_Scorecard = pd.concat([Data_for_Scorecard_CFC, Data_for_Scorecard_CFB], ignore_index=True)
+
+# Add CARM_FLAG
+Data_for_Scorecard = add_carm_flag(Data_for_Scorecard)  # Assuming add_carm_flag is defined elsewhere
+
+# Add customer name
+Data_for_Scorecard = add_cus_name(Data_for_Scorecard, apl='apl_grade_model_cutoff')  # Assuming add_cus_name is defined elsewhere
+
+# Add private equity flag (for HF only)
 if model == 'HF':
-    rpt_pvt_rating_miss = pvt_all[pvt_all['gcdu_global_id'].notna() & 
-                                    ~pvt_all['gcdu_global_id'].isin(apl_grade_model_cutoff['gcdu_global_id'].unique())]
+    Data_for_Scorecard = add_pe_flag(Data_for_Scorecard, pvt='pvt_gid')  # Assuming add_pe_flag is defined elsewhere
 
-# Deduplicate rating data at gid/carm instance/approval date level
-apl_grade_model_cutoff = apl_grade_model_cutoff.sort_values(by=['gcdu_global_id', 'carm_instance', 
-                                                                'approval_date', 'customer_id', 
-                                                                'credit_serial_number'], 
-                                                            ascending=[True, True, True, False, False])
+# Create lean data
+Data_for_Scorecard_lean = create_lean_data(Data_for_Scorecard)  # Assuming create_lean_data is defined elsewhere
 
-apl_grade_model_nodup = apl_grade_model_cutoff.drop_duplicates(subset=['gcdu_global_id', 'carm_instance', 
-                                                                       'approval_date'])
+# Create a GId level summary with GRA_FLAG_OVERALL (CFB+CFC)
+Data_for_Scorecard_sum = create_gid_level_summary(Data_for_Scorecard)  # Assuming create_gid_level_summary is defined elsewhere
 
-gid_count_after_dedup = apl_grade_model_nodup['gcdu_global_id'].nunique()
-print(f"gid count after dedup: {gid_count_after_dedup}")
+# Generate summary
+model_summary = Data_for_Scorecard_sum.groupby(['CARM_FLAG', 'GRA_FLAG_OVERALL', 'GRA_FLAG_TYPE']).size().reset_index(name='Count')
 
-# Add CARM_FLAG (gid level) and CARM_TYPE (record level)
-apl_grade_model_nodup = add_carm_flag_type(in=apl_grade_model_nodup, out=apl_grade_model_nodup)
+# Save final output
+Data_for_Scorecard.to_csv(f'new_hf/scopedata_{model}_{rundt}_{matchpctchar}.csv', index=False)  # Save full data
+Data_for_Scorecard_lean.to_csv(f'new_hf/scopedata_lean_{model}_{rundt}_{matchpctchar}.csv', index=False)  # Save lean data
+Data_for_Scorecard_sum.to_csv(f'new_hf/scopedata_sum_{model}_{rundt}_{matchpctchar}.csv', index=False)  # Save gid level summary data
 
-# Report - carmflag summary
-rpt_carmflag_summary = apl_grade_model_nodup.groupby('CARM_FLAG').size().reset_index(name='count')
-
-# Split into CFC CFB
-apl_grade_model_sort_cfc = apl_grade_model_nodup[apl_grade_model_nodup['carm_instance'] != "CARM_BANK"]
-apl_grade_model_sort_cfb = apl_grade_model_nodup[apl_grade_model_nodup['carm_instance'] == "CARM_BANK"]
-
-# Transpose required fields for CFC and CFB data
-apl_grade_model_sort_cfc_tr = transpose_all(in=apl_grade_model_sort_cfc, out='apl_grade_model_sort_cfc_tr', key='gcdu_global_id')
-apl_grade_model_sort_cfb_tr = transpose_all(in=apl_grade_model_sort_cfb, out='apl_grade_model_sort_cfb_tr', key='gcdu_global_id')
-
-cfc_count = apl_grade_model_sort_cfc_tr.shape[0]
-print(f"cfc count: {cfc_count}")
-cfb_count = apl_grade_model_sort_cfb_tr.shape[0]
-print(f"cfb count: {cfb_count}")
-
-# Calculate metrics for scoping assessment for CFC and CFB data
-apl_grade_model_sort_cfc_metrics = calculate_metrics(in=apl_grade_model_sort_cfc_tr, out='apl_grade_model_sort_cfc_metrics')
-apl_grade_model_sort_cfb_metrics = calculate_metrics(in=apl_grade_model_sort_cfb_tr, out='apl_grade_model_sort_cfb_metrics')
-
-cfc_metrics_count = apl_grade_model_sort_cfc_metrics.shape[0]
-print(f"CFC metrics count: {cfc_metrics_count}")
-cfb_metrics_count = apl_grade_model_sort_cfb_metrics.shape[0]
-print(f"CFB metrics count: {cfb_metrics_count}")
-
-# Add GRA_ASSESSMENT
-Data_for_Scorecard_CFC = gra_assessment_cfc(in=apl_grade_model_sort_cfc_metrics, out='Data_for_Scorecard_CFC')
-Data_for_Scorecard_CFB = gra_assessment_cfc(in=apl_grade_model_sort_cfb_metrics, out='Data_for_Scorecard_CFB')
+# Export lean data
+Data_for_Scorecard_lean.to_excel(outpath1, sheet_name=f'{model}_data', index=False)  # Export lean data
+# Export summary data
+Data_for_Scorecard_sum.to_excel(outpath1, sheet_name=f'{model}_sum', index=False)  # Export summary data
+# Export model summary data
+model_summary.to_excel(outpath1, sheet_name=f'{model}_flag_summary', index=False)  # Export model summary data
 ```
