@@ -1,116 +1,87 @@
-import pandas as pd
-from datetime import datetime
+```python
+def calculate_metrics(input_df, model, portfolio, dt_cutoff):
+    import pandas as pd
+    import numpy as np
 
-# Define variables
-model = "HF"  # HF, TF, or IN
-matchpctchar = 100
-rundt = "22MAY2024"
-dt_cutoff = "31DEC2023"
-outpath1 = f"/data/sasdata/rmad/teams/model_development/Nirmalya/hf/scoping/hf_portfolio_scope_cfc/CFC_Portfolio_Data_for_{model}_{rundt}_{matchpctchar}.xlsx"
+    df = input_df.copy()
 
-pveq_path = "/data/sasdata/rmad/teams/model_development/Nirmalya/hf/scoping/mark/cfc_private_equity.csv"
-pvdt_path = "/data/sasdata/rmad/teams/model_development/Nirmalya/hf/scoping/mark/cfc_private_debt.csv"
-pvcr_path = "/data/sasdata/rmad/teams/model_development/Nirmalya/hf/scoping/mark/cfc_private_credit.csv"
-capc_path = "/data/sasdata/rmad/teams/model_development/Nirmalya/hf/scoping/mark/capcall.csv"
+    # 1. Scorecard counts
+    df['TOTAL_SCORECARD_COUNT'] = df.filter(like='scoretype_').notna().sum(axis=1)
+    df['TF_SCORECARD_COUNT'] = (df.filter(like='scoretype_') == "TradFund").sum(axis=1)
+    df['HF_SCORECARD_COUNT'] = (df.filter(like='scoretype_') == "HedgeFund").sum(axis=1)
+    df['FF_SCORECARD_COUNT'] = (df.filter(like='scoretype_') == "FundofFund").sum(axis=1)
+    df['IN_SCORECARD_COUNT'] = (df.filter(like='scoretype_') == "Insurance").sum(axis=1)
+    df['OT_SCORECARD_COUNT'] = (df.filter(like='scoretype_') == "Other").sum(axis=1)
+    df['MODEL_SCORECARD_COUNT'] = df[f'{model}_SCORECARD_COUNT']
 
-matchpct = matchpctchar / 100
+    # 2. SIC counts
+    df['TOTAL_SIC_COUNT'] = df.filter(like='sictype_').notna().sum(axis=1)
+    df['TF_SIC_COUNT'] = (df.filter(like='sictype_') == "TradFund").sum(axis=1)
+    df['HF_SIC_COUNT'] = (df.filter(like='sictype_') == "HedgeFund").sum(axis=1)
+    df['IN_SIC_COUNT'] = (df.filter(like='sictype_') == "Insurance").sum(axis=1)
+    df['OT_SIC_COUNT'] = (df.filter(like='sictype_') == "Other").sum(axis=1)
+    df['MODEL_SIC_COUNT'] = df[f'{model}_SIC_COUNT']
 
-# Helper function to import CSV
-def import_csv(file, out):
-    data = pd.read_csv(file)
-    data.to_csv(out, index=False)
-    return data
+    # 3. Scorecard durations
+    def calculate_durations(df, rating_col, dt_col):
+        total_dur = []
+        for index, row in df.iterrows():
+            durations = []
+            for i in range(len(row[rating_col])):
+                if pd.notna(row[dt_col][i]):
+                    next_rating_date = row[dt_col][i+1] if i+1 < len(row[rating_col]) else dt_cutoff
+                    dur = (next_rating_date - row[dt_col][i]).days / 30
+                    if next_rating_date == dt_cutoff and dur > 18:
+                        dur = 18
+                    durations.append(dur)
+            total_dur.append(sum(durations))
+        return total_dur
 
-# Helper function to import Excel
-def import_excel(file, sheet=None):
-    data = pd.read_excel(file, sheet_name=sheet)
-    return data
+    df['TOTAL_RATING_DUR'] = calculate_durations(df, 'scoretype_', 'appdate_')
+    df['TF_SCORECARD_DUR'] = calculate_durations(df[df['scoretype_'] == "TradFund"], 'scoretype_', 'appdate_')
+    df['HF_SCORECARD_DUR'] = calculate_durations(df[df['scoretype_'] == "HedgeFund"], 'scoretype_', 'appdate_')
+    df['FF_SCORECARD_DUR'] = calculate_durations(df[df['scoretype_'] == "FundofFund"], 'scoretype_', 'appdate_')
+    df['IN_SCORECARD_DUR'] = calculate_durations(df[df['scoretype_'] == "Insurance"], 'scoretype_', 'appdate_')
+    df['OT_SCORECARD_DUR'] = calculate_durations(df[df['scoretype_'] == "Other"], 'scoretype_', 'appdate_')
+    df['MODEL_SCORECARD_DUR'] = df[f'{model}_SCORECARD_DUR']
 
-# Helper function to transpose data
-def transpose_data(df, key, var, prefix):
-    temp_df = df[[key, var]]
-    transposed = temp_df.pivot(index=key, columns=var)
-    transposed.columns = [f'{prefix}_{col}' for col in transposed.columns]
-    return transposed.reset_index()
+    # 4. SIC durations
+    df['TOTAL_SIC_DUR'] = calculate_durations(df, 'sictype_', 'appdate_')
+    df['TF_SIC_DUR'] = calculate_durations(df[df['sictype_'] == "TradFund"], 'sictype_', 'appdate_')
+    df['HF_SIC_DUR'] = calculate_durations(df[df['sictype_'] == "HedgeFund"], 'sictype_', 'appdate_')
+    df['IN_SIC_DUR'] = calculate_durations(df[df['sictype_'] == "Insurance"], 'sictype_', 'appdate_')
+    df['OT_SIC_DUR'] = calculate_durations(df[df['sictype_'] == "Other"], 'sictype_', 'appdate_')
+    df['MODEL_SIC_DUR'] = df[f'{model}_SIC_DUR']
 
-# Reformat data
-def reformat(df):
-    # Automatically format the column names based on data
-    cols = [col for col in df.columns if col.startswith('appdate_')]
-    varcount = len(cols)
-    
-    print(f"Varcount: {varcount}")
+    # 5. 2nd max scorecard
+    def second_max_scorecard(df, portfolio):
+        second_max_type, second_max_count, second_max_dur = [], [], []
+        for index, row in df.iterrows():
+            types = ["HedgeFund", "FundofFund", "TradFund", "Insurance", "Other"]
+            counts = [row['HF_SCORECARD_COUNT'], row['FF_SCORECARD_COUNT'], row['TF_SCORECARD_COUNT'],
+                      row['IN_SCORECARD_COUNT'], row['OT_SCORECARD_COUNT']]
+            durations = [row['HF_SCORECARD_DUR'], row['FF_SCORECARD_DUR'], row['TF_SCORECARD_DUR'],
+                         row['IN_SCORECARD_DUR'], row['OT_SCORECARD_DUR']]
+            max_dur_idx = np.argmax(durations) if portfolio not in types else np.argmax([d for i, d in enumerate(durations) if types[i] != portfolio])
+            second_max_type.append(types[max_dur_idx])
+            second_max_count.append(counts[max_dur_idx])
+            second_max_dur.append(durations[max_dur_idx])
+        return second_max_type, second_max_count, second_max_dur
 
-    # Add formatted columns dynamically
-    for i in range(1, varcount + 1):
-        df[f'appdate_{i}'] = pd.to_datetime(df[f'appdate_{i}'], errors='coerce')
+    df['SECOND_MAX_SCORECARD_TYPE'], df['SECOND_MAX_SCORECARD_COUNT'], df['SECOND_MAX_SCORECARD_DUR'] = second_max_scorecard(df, portfolio)
 
-    return df
+    # 6. 2nd max SIC
+    df['SECOND_MAX_SIC_TYPE'], df['SECOND_MAX_SIC_COUNT'], df['SECOND_MAX_SIC_DUR'] = second_max_scorecard(df, portfolio)
 
-# Portfolio map function
-def portfolio_map(model):
-    if model == "HF":
-        portfolio = "HedgeFund"
-    elif model == "TF":
-        portfolio = "TradFund"
-    elif model == "IN":
-        portfolio = "Insurance"
-    else:
-        portfolio = None
-    return portfolio
+    # 7. First and last ratings
+    df['FIRST_RATING_DATE'] = df.filter(like='appdate_').min(axis=1)
+    df['LAST_RATING_DATE'] = df.filter(like='appdate_').max(axis=1)
 
-portfolio = portfolio_map(model)
-
-# Assign scorecard and SIC types
-def assign_scope_identifier(df):
-    df['SCORECARD_TYPE'] = ""
-    df['SIC_TYPE'] = ""
-
-    df.loc[df['SCORECARD_NAME'].isin(HF_SCORECARD_NAME) |
-           df['CARM_SCORECARD_DESC'].isin(HF_SCORECARD_DESC) |
-           df['CREDIT_RISK_SCORECARD_GRP_DESC'].isin(HF_SCORECARD_GRP_DESC), 'SCORECARD_TYPE'] = "HedgeFund"
-    
-    df.loc[df['SCORECARD_NAME'].isin(FF_SCORECARD_NAME), 'SCORECARD_TYPE'] = "FundofFund"
-    
-    df.loc[df['SCORECARD_NAME'].isin(TF_SCORECARD_NAME) |
-           df['CARM_SCORECARD_DESC'].isin(TF_SCORECARD_DESC) |
-           df['CREDIT_RISK_SCORECARD_GRP_DESC'].isin(TF_SCORECARD_GRP_DESC), 'SCORECARD_TYPE'] = "TradFund"
-    
-    df.loc[df['SCORECARD_NAME'].isin(IN_SCORECARD_NAME) |
-           df['CARM_SCORECARD_DESC'].isin(IN_SCORECARD_DESC) |
-           df['CREDIT_RISK_SCORECARD_GRP_DESC'].isin(IN_SCORECARD_GRP_DESC), 'SCORECARD_TYPE'] = "Insurance"
-
-    df.loc[df['SIC_DESC'].str.upper().isin(HF_SIC) |
-           df['GROUP_SIC_DESC'].str.upper().isin(HF_SIC), 'SIC_TYPE'] = "HedgeFund"
-
-    df.loc[df['SIC_DESC'].str.upper().isin(TF_SIC) |
-           df['GROUP_SIC_DESC'].str.upper().isin(TF_SIC), 'SIC_TYPE'] = "TradFund"
-    
-    df.loc[df['SIC_DESC'].str.upper().isin(IN_SIC) |
-           df['GROUP_SIC_DESC'].str.upper().isin(IN_SIC), 'SIC_TYPE'] = "Insurance"
+    # 8. Metrics
+    df['MODEL_SCORECARD_PCT'] = df['MODEL_SCORECARD_COUNT'] / df['TOTAL_SCORECARD_COUNT']
+    df['MODEL_SCORECARD_DUR_PCT'] = df['MODEL_SCORECARD_DUR'] / df['TOTAL_RATING_DUR']
+    df['MODEL_SIC_PCT'] = df['MODEL_SIC_COUNT'] / df['TOTAL_SIC_COUNT']
+    df['MODEL_SIC_DUR_PCT'] = df['MODEL_SIC_DUR'] / df['TOTAL_SIC_DUR']
 
     return df
-
-# Transpose and merge all dataframes
-def transpose_all(df, key):
-    df.sort_values(by=[key, 'APPROVAL_DATE'], inplace=True)
-
-    transposed_carmins = transpose_data(df, key, 'CARM_INSTANCE', 'carmins')
-    transposed_appdate = transpose_data(df, key, 'APPROVAL_DATE', 'appdate')
-    transposed_scorename = transpose_data(df, key, 'SCORECARD_NAME', 'scorename')
-    transposed_scoredesc = transpose_data(df, key, 'CARM_SCORECARD_DESC', 'scoredesc')
-    transposed_sgrpdesc = transpose_data(df, key, 'CREDIT_RISK_SCORECARD_GRP_DESC', 'sgrpdesc')
-    transposed_scoretype = transpose_data(df, key, 'SCORECARD_TYPE', 'scoretype')
-    transposed_sicdesc = transpose_data(df, key, 'SIC_DESC', 'sicdesc')
-    transposed_sicgrpdesc = transpose_data(df, key, 'GROUP_SIC_DESC', 'sicgrpdesc')
-    transposed_sictype = transpose_data(df, key, 'SIC_TYPE', 'sictype')
-
-    merged_df = pd.concat([transposed_appdate, transposed_scorename, transposed_scoredesc, 
-                           transposed_sgrpdesc, transposed_scoretype, transposed_sicdesc,
-                           transposed_sicgrpdesc, transposed_sictype, transposed_carmins], axis=1)
-    
-    return reformat(merged_df)
-
-# Example usage
-# data = import_csv(pveq_path, 'output.csv')
-# transposed_data = transpose_all(data, 'gcdu_global_id')
+```
