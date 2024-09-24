@@ -1,44 +1,17 @@
-```python
-import pandas as pd
-
-# Add CARM_TYPE
-Data_for_Scorecard_CFB = pd.read_csv('Data_for_Scorecard_CFB.csv')  # Replace with the actual file path
-Data_for_Scorecard_CFB['CARM_TYPE'] = "CFB"
-
-Data_for_Scorecard_CFC = pd.read_csv('Data_for_Scorecard_CFC.csv')  # Replace with the actual file path
-Data_for_Scorecard_CFC['CARM_TYPE'] = "CFC"
-
-# Combine CFB and CFC data
-Data_for_Scorecard = pd.concat([Data_for_Scorecard_CFC, Data_for_Scorecard_CFB], ignore_index=True)
-
-# Add CARM_FLAG
-Data_for_Scorecard = add_carm_flag(Data_for_Scorecard)  # Assuming add_carm_flag is defined elsewhere
-
-# Add customer name
-Data_for_Scorecard = add_cus_name(Data_for_Scorecard, apl='apl_grade_model_cutoff')  # Assuming add_cus_name is defined elsewhere
-
-# Add private equity flag (for HF only)
-if model == 'HF':
-    Data_for_Scorecard = add_pe_flag(Data_for_Scorecard, pvt='pvt_gid')  # Assuming add_pe_flag is defined elsewhere
-
-# Create lean data
-Data_for_Scorecard_lean = create_lean_data(Data_for_Scorecard)  # Assuming create_lean_data is defined elsewhere
-
-# Create a GId level summary with GRA_FLAG_OVERALL (CFB+CFC)
-Data_for_Scorecard_sum = create_gid_level_summary(Data_for_Scorecard)  # Assuming create_gid_level_summary is defined elsewhere
-
-# Generate summary
-model_summary = Data_for_Scorecard_sum.groupby(['CARM_FLAG', 'GRA_FLAG_OVERALL', 'GRA_FLAG_TYPE']).size().reset_index(name='Count')
-
-# Save final output
-Data_for_Scorecard.to_csv(f'new_hf/scopedata_{model}_{rundt}_{matchpctchar}.csv', index=False)  # Save full data
-Data_for_Scorecard_lean.to_csv(f'new_hf/scopedata_lean_{model}_{rundt}_{matchpctchar}.csv', index=False)  # Save lean data
-Data_for_Scorecard_sum.to_csv(f'new_hf/scopedata_sum_{model}_{rundt}_{matchpctchar}.csv', index=False)  # Save gid level summary data
-
-# Export lean data
-Data_for_Scorecard_lean.to_excel(outpath1, sheet_name=f'{model}_data', index=False)  # Export lean data
-# Export summary data
-Data_for_Scorecard_sum.to_excel(outpath1, sheet_name=f'{model}_sum', index=False)  # Export summary data
-# Export model summary data
-model_summary.to_excel(outpath1, sheet_name=f'{model}_flag_summary', index=False)  # Export model summary data
-```
+def identify_model_gid(apl, model, out):
+    # Create a filtered dataset based on conditions
+    temp_apl_model_1 = apl[
+        (apl['SCORECARD_NAME'].isin(globals()[f'{model}_Scorecard_name'])) |
+        (model == 'HF' and apl['SCORECARD_NAME'].isin(globals()['ff_scorecard_name'])) |
+        (apl['CARM_SCORECARD_DESC'].isin(globals()[f'{model}_Scorecard_desc'])) |
+        (apl['CREDIT_RISK_SCORECARD_GRP_DESC'].isin(globals()[f'{model}_Scorecard_grp_desc'])) |
+        (apl['SIC_DESC'].str.upper().isin(globals()[f'{model}_sic'])) |
+        (apl['GROUP_SIC_DESC'].str.upper().isin(globals()[f'{model}_sic']))
+    ]
+    
+    # Extract distinct GCDU_GLOBAL_ID values
+    out_df = temp_apl_model_1[['GCDU_GLOBAL_ID']].drop_duplicates()
+    
+    # Save to output variable
+    out.clear()
+    out.extend(out_df['GCDU_GLOBAL_ID'].tolist())
