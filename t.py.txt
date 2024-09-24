@@ -1,17 +1,27 @@
-def identify_model_gid(apl, model, out):
-    # Create a filtered dataset based on conditions
-    temp_apl_model_1 = apl[
-        (apl['SCORECARD_NAME'].isin(globals()[f'{model}_Scorecard_name'])) |
-        (model == 'HF' and apl['SCORECARD_NAME'].isin(globals()['ff_scorecard_name'])) |
-        (apl['CARM_SCORECARD_DESC'].isin(globals()[f'{model}_Scorecard_desc'])) |
-        (apl['CREDIT_RISK_SCORECARD_GRP_DESC'].isin(globals()[f'{model}_Scorecard_grp_desc'])) |
-        (apl['SIC_DESC'].str.upper().isin(globals()[f'{model}_sic'])) |
-        (apl['GROUP_SIC_DESC'].str.upper().isin(globals()[f'{model}_sic']))
-    ]
+def identify_model_gid(apl_df, model, ff_scorecard_name=None):
+    # Define condition variables for different models
+    model_scorecard_name = globals().get(f'{model}_Scorecard_name', [])
+    model_scorecard_desc = globals().get(f'{model}_Scorecard_desc', [])
+    model_scorecard_grp_desc = globals().get(f'{model}_Scorecard_grp_desc', [])
+    model_sic = globals().get(f'{model}_sic', [])
     
-    # Extract distinct GCDU_GLOBAL_ID values
-    out_df = temp_apl_model_1[['GCDU_GLOBAL_ID']].drop_duplicates()
+    # Apply conditions similar to SAS
+    condition = (
+        (apl_df['SCORECARD_NAME'].isin(model_scorecard_name)) |
+        (apl_df['CARM_SCORECARD_DESC'].isin(model_scorecard_desc)) |
+        (apl_df['CREDIT_RISK_SCORECARD_GRP_DESC'].isin(model_scorecard_grp_desc)) |
+        (apl_df['SIC_DESC'].str.upper().isin(model_sic)) |
+        (apl_df['GROUP_SIC_DESC'].str.upper().isin(model_sic))
+    )
+
+    # If the model is 'HF', add the ff_scorecard_name condition
+    if model == 'HF' and ff_scorecard_name:
+        condition |= apl_df['SCORECARD_NAME'].isin(ff_scorecard_name)
+
+    # Filter based on the condition
+    filtered_df = apl_df[condition]
     
-    # Save to output variable
-    out.clear()
-    out.extend(out_df['GCDU_GLOBAL_ID'].tolist())
+    # Select distinct GCDU_GLOBAL_ID
+    output_df = filtered_df[['GCDU_GLOBAL_ID']].drop_duplicates()
+
+    return output_df
