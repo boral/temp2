@@ -1,52 +1,60 @@
-import pandas as pd
+def assign_scope_identifier(df):
+    # Create new columns with default values
+    df['scorecard_type'] = ''
+    df['sic_type'] = ''
+    
+    # Logic for scorecard_type assignment
+    hf_conditions = (
+        df['scorecard_name'].isin(HF_scorecard_name) |
+        df['carm_scorecard_desc'].isin(HF_scorecard_desc) |
+        df['credit_risk_scorecard_grp_desc'].isin(HF_scorecard_grp_desc)
+    )
+    ff_conditions = df['scorecard_name'].isin(FF_scorecard_name)
+    tf_conditions = (
+        df['scorecard_name'].isin(TF_scorecard_name) |
+        df['carm_scorecard_desc'].isin(TF_scorecard_desc) |
+        df['credit_risk_scorecard_grp_desc'].isin(TF_scorecard_grp_desc)
+    )
+    in_conditions = (
+        df['scorecard_name'].isin(IN_scorecard_name) |
+        df['carm_scorecard_desc'].isin(IN_scorecard_desc) |
+        df['credit_risk_scorecard_grp_desc'].isin(IN_scorecard_grp_desc)
+    )
+    
+    other_conditions = (
+        df['scorecard_name'].notna() |
+        df['carm_scorecard_desc'].notna() |
+        df['credit_risk_scorecard_grp_desc'].notna()
+    )
+    
+    df.loc[hf_conditions, 'scorecard_type'] = "HedgeFund"
+    df.loc[ff_conditions, 'scorecard_type'] = "FundofFund"
+    df.loc[tf_conditions, 'scorecard_type'] = "TradFund"
+    df.loc[in_conditions, 'scorecard_type'] = "Insurance"
+    df.loc[other_conditions & df['scorecard_type'].eq(''), 'scorecard_type'] = "Other"
 
-def load_pvt_data(pveq_path, pvdt_path, pvcr_path, capc_path):
-    # Load CSV files
-    pvteq = pd.read_csv(pveq_path)
-    pvtdt = pd.read_csv(pvdt_path)
-    pvtcr = pd.read_csv(pvcr_path)
-    capcall = pd.read_csv(capc_path)
+    # Logic for sic_type assignment
+    hf_sic_conditions = (
+        df['sic_desc'].str.upper().isin(HF_sic) |
+        df['group_sic_desc'].str.upper().isin(HF_sic)
+    )
+    tf_sic_conditions = (
+        df['sic_desc'].str.upper().isin(TF_sic) |
+        df['group_sic_desc'].str.upper().isin(TF_sic)
+    )
+    in_sic_conditions = (
+        df['sic_desc'].str.upper().isin(IN_sic) |
+        df['group_sic_desc'].str.upper().isin(IN_sic)
+    )
     
-    # Assign PE flags
-    pvteq['PE_FLAG'] = "PVEQ"
-    pvteq['PE_FLAG2'] = 1
-    pvteq['PE_NAME'] = pvteq['customer_name']
+    other_sic_conditions = (
+        df['sic_desc'].notna() |
+        df['group_sic_desc'].notna()
+    )
     
-    pvtdt['PE_FLAG'] = "PVDT"
-    pvtdt['PE_FLAG2'] = 1
-    pvtdt['PE_NAME'] = pvtdt['customer_name']
+    df.loc[hf_sic_conditions, 'sic_type'] = "HedgeFund"
+    df.loc[tf_sic_conditions, 'sic_type'] = "TradFund"
+    df.loc[in_sic_conditions, 'sic_type'] = "Insurance"
+    df.loc[other_sic_conditions & df['sic_type'].eq(''), 'sic_type'] = "Other"
     
-    pvtcr['PE_FLAG'] = "PVCR"
-    pvtcr['PE_FLAG2'] = 1
-    pvtcr['PE_NAME'] = pvtcr['customer_name']
-    
-    capcall['PE_FLAG'] = "CAPC"
-    capcall['PE_FLAG2'] = 2
-    
-    # Consolidate
-    pvt_all = pd.concat([pvteq, pvtdt, pvtcr, capcall], ignore_index=True)
-    
-    # Drop records with missing gid (gcdu_global_id)
-    pvt = pvt_all[pvt_all['gcdu_global_id'].notna()]
-    
-    # Deduplicate by gcdu_global_id, prioritize based on PE_FLAG2
-    pvt = pvt.sort_values(by=['gcdu_global_id', 'PE_FLAG2'], ascending=[True, False]).drop_duplicates(subset=['gcdu_global_id'])
-    
-    # Final output
-    result = pvt[['gcdu_global_id', 'PE_FLAG', 'PE_NAME']]
-    
-    # Report - pvt with missing gid
-    rpt_pvt_gid_miss = pvt_all[pvt_all['gcdu_global_id'].isna()]
-    
-    # Report - pvt which are present in capcall list
-    common_gids = pvt_all[pvt_all['PE_FLAG'] == "CAPC"]['gcdu_global_id'].unique()
-    rpt_pvt_capc_common = pvt_all[
-        (pvt_all['gcdu_global_id'].notna()) &
-        (pvt_all['PE_FLAG'] != "CAPC") &
-        (pvt_all['gcdu_global_id'].isin(common_gids))
-    ]
-    
-    return result, rpt_pvt_gid_miss, rpt_pvt_capc_common
-
-# Usage example:
-# result, rpt_pvt_gid_miss, rpt_pvt_capc_common = load_pvt_data("pveq.csv", "pvdt.csv", "pvcr.csv", "capc.csv")
+    return df
