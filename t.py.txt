@@ -1,29 +1,53 @@
-def add_carm_flag_type(df):
-    # Step 1: Create cbflag and ccflag based on carm_instance values
-    df['cbflag'] = df['carm_instance'].apply(lambda x: 1 if x == 'CARM_BANK' else 0)
-    df['ccflag'] = df['carm_instance'].apply(lambda x: 1 if x != 'CARM_BANK' else 0)
+# Transpose data for a specific variable
+def transpose_data(df, key, var, prefix):
+    temp_df = df[[key, var]].copy()
+    transposed = temp_df.pivot(index=key, columns=var).reset_index()
+    transposed.columns = [f"{prefix}_{col}" if col != key else col for col in transposed.columns]
+    return transposed
+
+# Function to reformat dataframe with dynamic columns based on `appdate_`
+def reformat(df):
+    appdate_cols = [col for col in df.columns if col.startswith('appdate_')]
+    varcount = len(appdate_cols)
     
-    # Step 2: Group by 'gcdu_global_id' and calculate the sum of cbflag and ccflag
-    carmflag = df.groupby('gcdu_global_id').agg(
-        cbcount=('cbflag', 'sum'),
-        cccount=('ccflag', 'sum')
-    ).reset_index()
+    formatted_cols = []
+    for i in range(1, varcount + 1):
+        formatted_cols += [
+            f"appdate_{i}", f"carmins_{i}", f"scorename_{i}", 
+            f"scoredesc_{i}", f"sgrpdesc_{i}", f"scoretype_{i}",
+            f"sicdesc_{i}", f"sicgrpdesc_{i}", f"sictype_{i}"
+        ]
     
-    # Step 3: Create the CARM_FLAG based on cbcount and cccount
-    def get_carm_flag(row):
-        if row['cbcount'] == 0:
-            return 'CFCONLY'
-        elif row['cccount'] == 0:
-            return 'CFBONLY'
-        elif row['cbcount'] > 0 and row['cccount'] > 0:
-            return 'CARMBOTH'
-    
-    carmflag['CARM_FLAG'] = carmflag.apply(get_carm_flag, axis=1)
-    
-    # Step 4: Merge the carm_flag back to the original dataframe
-    df = df.merge(carmflag[['gcdu_global_id', 'CARM_FLAG']], on='gcdu_global_id', how='left')
-    
-    # Step 5: Add CARM_TYPE based on carm_instance
-    df['CARM_TYPE'] = df['carm_instance'].apply(lambda x: 'CFB' if x == 'CARM_BANK' else 'CFC')
-    
+    df = df.reindex(columns=df.columns.tolist() + formatted_cols)
     return df
+
+# Function to transpose all required fields
+def transpose_all(df, key):
+    df = df.sort_values(by=[key, 'APPROVAL_DATE'])
+
+    # Transpose each field
+    transposed_carmins = transpose_data(df, key, 'CARM_INSTANCE', 'carmins')
+    transposed_appdate = transpose_data(df, key, 'APPROVAL_DATE', 'appdate')
+    transposed_scorename = transpose_data(df, key, 'SCORECARD_NAME', 'scorename')
+    transposed_scoredesc = transpose_data(df, key, 'CARM_SCORECARD_DESC', 'scoredesc')
+    transposed_sgrpdesc = transpose_data(df, key, 'CREDIT_RISK_SCORECARD_GRP_DESC', 'sgrpdesc')
+    transposed_scoretype = transpose_data(df, key, 'SCORECARD_TYPE', 'scoretype')
+    transposed_sicdesc = transpose_data(df, key, 'SIC_DESC', 'sicdesc')
+    transposed_sicgrpdesc = transpose_data(df, key, 'GROUP_SIC_DESC', 'sicgrpdesc')
+    transposed_sictype = transpose_data(df, key, 'SIC_TYPE', 'sictype')
+
+    # Merge all transposed dataframes
+    merged_df = transposed_appdate
+    merged_df = merged_df.merge(transposed_scorename, on=key, how='left')
+    merged_df = merged_df.merge(transposed_scoredesc, on=key, how='left')
+    merged_df = merged_df.merge(transposed_sgrpdesc, on=key, how='left')
+    merged_df = merged_df.merge(transposed_scoretype, on=key, how='left')
+    merged_df = merged_df.merge(transposed_sicdesc, on=key, how='left')
+    merged_df = merged_df.merge(transposed_sicgrpdesc, on=key, how='left')
+    merged_df = merged_df.merge(transposed_sictype, on=key, how='left')
+    merged_df = merged_df.merge(transposed_carmins, on=key, how='left')
+
+    # Reformat dataframe
+    result_df = reformat(merged_df)
+    
+    return result_df
