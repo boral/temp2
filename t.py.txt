@@ -1,40 +1,17 @@
-# Transpose data for a specific variable
-def transpose_data(df, key, var, prefix):
-    temp_df = df[[key, var]].copy()
-    transposed = temp_df.pivot(index=key, columns=var).reset_index()
-    transposed.columns = [f"{prefix}_{col}" if col != key else col for col in transposed.columns]
-    return transposed
-
-# Function to reformat dataframe with dynamic columns based on `appdate_`
-def reformat(df):
-    appdate_cols = [col for col in df.columns if col.startswith('appdate_')]
-    varcount = len(appdate_cols)
-    
-    formatted_cols = []
-    for i in range(1, varcount + 1):
-        formatted_cols += [
-            f"appdate_{i}", f"carmins_{i}", f"scorename_{i}", 
-            f"scoredesc_{i}", f"sgrpdesc_{i}", f"scoretype_{i}",
-            f"sicdesc_{i}", f"sicgrpdesc_{i}", f"sictype_{i}"
-        ]
-    
-    df = df.reindex(columns=df.columns.tolist() + formatted_cols)
-    return df
-
-# Function to transpose all required fields
+# Function to transpose all required fields with lowercase column names
 def transpose_all(df, key):
-    df = df.sort_values(by=[key, 'APPROVAL_DATE'])
+    df = df.sort_values(by=[key, 'approval_date'])
 
-    # Transpose each field
-    transposed_carmins = transpose_data(df, key, 'CARM_INSTANCE', 'carmins')
-    transposed_appdate = transpose_data(df, key, 'APPROVAL_DATE', 'appdate')
-    transposed_scorename = transpose_data(df, key, 'SCORECARD_NAME', 'scorename')
-    transposed_scoredesc = transpose_data(df, key, 'CARM_SCORECARD_DESC', 'scoredesc')
-    transposed_sgrpdesc = transpose_data(df, key, 'CREDIT_RISK_SCORECARD_GRP_DESC', 'sgrpdesc')
-    transposed_scoretype = transpose_data(df, key, 'SCORECARD_TYPE', 'scoretype')
-    transposed_sicdesc = transpose_data(df, key, 'SIC_DESC', 'sicdesc')
-    transposed_sicgrpdesc = transpose_data(df, key, 'GROUP_SIC_DESC', 'sicgrpdesc')
-    transposed_sictype = transpose_data(df, key, 'SIC_TYPE', 'sictype')
+    # Transpose each field using lowercase column names
+    transposed_carmins = transpose_data(df, key, 'carm_instance', 'carmins')
+    transposed_appdate = transpose_data(df, key, 'approval_date', 'appdate')
+    transposed_scorename = transpose_data(df, key, 'scorecard_name', 'scorename')
+    transposed_scoredesc = transpose_data(df, key, 'carm_scorecard_desc', 'scoredesc')
+    transposed_sgrpdesc = transpose_data(df, key, 'credit_risk_scorecard_grp_desc', 'sgrpdesc')
+    transposed_scoretype = transpose_data(df, key, 'scorecard_type', 'scoretype')
+    transposed_sicdesc = transpose_data(df, key, 'sic_desc', 'sicdesc')
+    transposed_sicgrpdesc = transpose_data(df, key, 'group_sic_desc', 'sicgrpdesc')
+    transposed_sictype = transpose_data(df, key, 'sic_type', 'sictype')
 
     # Merge all transposed dataframes
     merged_df = transposed_appdate
