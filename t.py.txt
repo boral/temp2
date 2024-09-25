@@ -1,27 +1,52 @@
-def identify_model_gid(apl_df, model, ff_scorecard_name=None):
-    # Define condition variables for different models
-    model_scorecard_name = globals().get(f'{model}_Scorecard_name', [])
-    model_scorecard_desc = globals().get(f'{model}_Scorecard_desc', [])
-    model_scorecard_grp_desc = globals().get(f'{model}_Scorecard_grp_desc', [])
-    model_sic = globals().get(f'{model}_sic', [])
+import pandas as pd
+
+def load_pvt_data(pveq_path, pvdt_path, pvcr_path, capc_path):
+    # Load CSV files
+    pvteq = pd.read_csv(pveq_path)
+    pvtdt = pd.read_csv(pvdt_path)
+    pvtcr = pd.read_csv(pvcr_path)
+    capcall = pd.read_csv(capc_path)
     
-    # Apply conditions similar to SAS
-    condition = (
-        (apl_df['SCORECARD_NAME'].isin(model_scorecard_name)) |
-        (apl_df['CARM_SCORECARD_DESC'].isin(model_scorecard_desc)) |
-        (apl_df['CREDIT_RISK_SCORECARD_GRP_DESC'].isin(model_scorecard_grp_desc)) |
-        (apl_df['SIC_DESC'].str.upper().isin(model_sic)) |
-        (apl_df['GROUP_SIC_DESC'].str.upper().isin(model_sic))
-    )
-
-    # If the model is 'HF', add the ff_scorecard_name condition
-    if model == 'HF' and ff_scorecard_name:
-        condition |= apl_df['SCORECARD_NAME'].isin(ff_scorecard_name)
-
-    # Filter based on the condition
-    filtered_df = apl_df[condition]
+    # Assign PE flags
+    pvteq['PE_FLAG'] = "PVEQ"
+    pvteq['PE_FLAG2'] = 1
+    pvteq['PE_NAME'] = pvteq['customer_name']
     
-    # Select distinct GCDU_GLOBAL_ID
-    output_df = filtered_df[['GCDU_GLOBAL_ID']].drop_duplicates()
+    pvtdt['PE_FLAG'] = "PVDT"
+    pvtdt['PE_FLAG2'] = 1
+    pvtdt['PE_NAME'] = pvtdt['customer_name']
+    
+    pvtcr['PE_FLAG'] = "PVCR"
+    pvtcr['PE_FLAG2'] = 1
+    pvtcr['PE_NAME'] = pvtcr['customer_name']
+    
+    capcall['PE_FLAG'] = "CAPC"
+    capcall['PE_FLAG2'] = 2
+    
+    # Consolidate
+    pvt_all = pd.concat([pvteq, pvtdt, pvtcr, capcall], ignore_index=True)
+    
+    # Drop records with missing gid (gcdu_global_id)
+    pvt = pvt_all[pvt_all['gcdu_global_id'].notna()]
+    
+    # Deduplicate by gcdu_global_id, prioritize based on PE_FLAG2
+    pvt = pvt.sort_values(by=['gcdu_global_id', 'PE_FLAG2'], ascending=[True, False]).drop_duplicates(subset=['gcdu_global_id'])
+    
+    # Final output
+    result = pvt[['gcdu_global_id', 'PE_FLAG', 'PE_NAME']]
+    
+    # Report - pvt with missing gid
+    rpt_pvt_gid_miss = pvt_all[pvt_all['gcdu_global_id'].isna()]
+    
+    # Report - pvt which are present in capcall list
+    common_gids = pvt_all[pvt_all['PE_FLAG'] == "CAPC"]['gcdu_global_id'].unique()
+    rpt_pvt_capc_common = pvt_all[
+        (pvt_all['gcdu_global_id'].notna()) &
+        (pvt_all['PE_FLAG'] != "CAPC") &
+        (pvt_all['gcdu_global_id'].isin(common_gids))
+    ]
+    
+    return result, rpt_pvt_gid_miss, rpt_pvt_capc_common
 
-    return output_df
+# Usage example:
+# result, rpt_pvt_gid_miss, rpt_pvt_capc_common = load_pvt_data("pveq.csv", "pvdt.csv", "pvcr.csv", "capc.csv")
