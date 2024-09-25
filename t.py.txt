@@ -1,60 +1,29 @@
-def assign_scope_identifier(df):
-    # Create new columns with default values
-    df['scorecard_type'] = ''
-    df['sic_type'] = ''
+def add_carm_flag_type(df):
+    # Step 1: Create cbflag and ccflag based on carm_instance values
+    df['cbflag'] = df['carm_instance'].apply(lambda x: 1 if x == 'CARM_BANK' else 0)
+    df['ccflag'] = df['carm_instance'].apply(lambda x: 1 if x != 'CARM_BANK' else 0)
     
-    # Logic for scorecard_type assignment
-    hf_conditions = (
-        df['scorecard_name'].isin(HF_scorecard_name) |
-        df['carm_scorecard_desc'].isin(HF_scorecard_desc) |
-        df['credit_risk_scorecard_grp_desc'].isin(HF_scorecard_grp_desc)
-    )
-    ff_conditions = df['scorecard_name'].isin(FF_scorecard_name)
-    tf_conditions = (
-        df['scorecard_name'].isin(TF_scorecard_name) |
-        df['carm_scorecard_desc'].isin(TF_scorecard_desc) |
-        df['credit_risk_scorecard_grp_desc'].isin(TF_scorecard_grp_desc)
-    )
-    in_conditions = (
-        df['scorecard_name'].isin(IN_scorecard_name) |
-        df['carm_scorecard_desc'].isin(IN_scorecard_desc) |
-        df['credit_risk_scorecard_grp_desc'].isin(IN_scorecard_grp_desc)
-    )
+    # Step 2: Group by 'gcdu_global_id' and calculate the sum of cbflag and ccflag
+    carmflag = df.groupby('gcdu_global_id').agg(
+        cbcount=('cbflag', 'sum'),
+        cccount=('ccflag', 'sum')
+    ).reset_index()
     
-    other_conditions = (
-        df['scorecard_name'].notna() |
-        df['carm_scorecard_desc'].notna() |
-        df['credit_risk_scorecard_grp_desc'].notna()
-    )
+    # Step 3: Create the CARM_FLAG based on cbcount and cccount
+    def get_carm_flag(row):
+        if row['cbcount'] == 0:
+            return 'CFCONLY'
+        elif row['cccount'] == 0:
+            return 'CFBONLY'
+        elif row['cbcount'] > 0 and row['cccount'] > 0:
+            return 'CARMBOTH'
     
-    df.loc[hf_conditions, 'scorecard_type'] = "HedgeFund"
-    df.loc[ff_conditions, 'scorecard_type'] = "FundofFund"
-    df.loc[tf_conditions, 'scorecard_type'] = "TradFund"
-    df.loc[in_conditions, 'scorecard_type'] = "Insurance"
-    df.loc[other_conditions & df['scorecard_type'].eq(''), 'scorecard_type'] = "Other"
-
-    # Logic for sic_type assignment
-    hf_sic_conditions = (
-        df['sic_desc'].str.upper().isin(HF_sic) |
-        df['group_sic_desc'].str.upper().isin(HF_sic)
-    )
-    tf_sic_conditions = (
-        df['sic_desc'].str.upper().isin(TF_sic) |
-        df['group_sic_desc'].str.upper().isin(TF_sic)
-    )
-    in_sic_conditions = (
-        df['sic_desc'].str.upper().isin(IN_sic) |
-        df['group_sic_desc'].str.upper().isin(IN_sic)
-    )
+    carmflag['CARM_FLAG'] = carmflag.apply(get_carm_flag, axis=1)
     
-    other_sic_conditions = (
-        df['sic_desc'].notna() |
-        df['group_sic_desc'].notna()
-    )
+    # Step 4: Merge the carm_flag back to the original dataframe
+    df = df.merge(carmflag[['gcdu_global_id', 'CARM_FLAG']], on='gcdu_global_id', how='left')
     
-    df.loc[hf_sic_conditions, 'sic_type'] = "HedgeFund"
-    df.loc[tf_sic_conditions, 'sic_type'] = "TradFund"
-    df.loc[in_sic_conditions, 'sic_type'] = "Insurance"
-    df.loc[other_sic_conditions & df['sic_type'].eq(''), 'sic_type'] = "Other"
+    # Step 5: Add CARM_TYPE based on carm_instance
+    df['CARM_TYPE'] = df['carm_instance'].apply(lambda x: 'CFB' if x == 'CARM_BANK' else 'CFC')
     
     return df
