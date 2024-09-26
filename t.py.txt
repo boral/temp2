@@ -1,12 +1,20 @@
 def transpose_data(df, key, var, prefix):
-    # Select only the key and variable columns, similar to the "keep" statement in SAS
-    temp_df = df[[key, var]].copy()
-    
-    # Pivot the data, similar to the SAS PROC TRANSPOSE with BY key
-    # We use pivot_table with an aggregation to handle duplicate values.
-    transposed = temp_df.pivot_table(index=key, columns=var, aggfunc='first').reset_index()
-    
-    # Rename the columns to match the SAS prefix approach
-    transposed.columns = [f"{prefix}_{col}" if col != key else col for col in transposed.columns]
-    
-    return transposed
+    # Initialize an empty dataframe to store the transposed data
+    transposed_df = pd.DataFrame()
+
+    # Loop through unique values in the key column
+    for key_val in df[key].unique():
+        # Filter the dataframe for the current key value
+        temp_df = df[df[key] == key_val]
+        
+        # Create a dictionary to hold the new transposed row
+        transposed_row = {key: key_val}
+        
+        # Loop through the variable column and create new columns based on the prefix
+        for i, value in enumerate(temp_df[var].values, start=1):
+            transposed_row[f'{prefix}_{i}'] = value
+        
+        # Append the transposed row to the final dataframe
+        transposed_df = transposed_df.append(transposed_row, ignore_index=True)
+
+    return transposed_df
