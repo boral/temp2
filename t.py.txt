@@ -1,30 +1,12 @@
-# Function to transpose all required fields with lowercase column names
-def transpose_all(df, key):
-    df = df.sort_values(by=[key, 'approval_date'])
-
-    # Transpose each field using lowercase column names
-    transposed_carmins = transpose_data(df, key, 'carm_instance', 'carmins')
-    transposed_appdate = transpose_data(df, key, 'approval_date', 'appdate')
-    transposed_scorename = transpose_data(df, key, 'scorecard_name', 'scorename')
-    transposed_scoredesc = transpose_data(df, key, 'carm_scorecard_desc', 'scoredesc')
-    transposed_sgrpdesc = transpose_data(df, key, 'credit_risk_scorecard_grp_desc', 'sgrpdesc')
-    transposed_scoretype = transpose_data(df, key, 'scorecard_type', 'scoretype')
-    transposed_sicdesc = transpose_data(df, key, 'sic_desc', 'sicdesc')
-    transposed_sicgrpdesc = transpose_data(df, key, 'group_sic_desc', 'sicgrpdesc')
-    transposed_sictype = transpose_data(df, key, 'sic_type', 'sictype')
-
-    # Merge all transposed dataframes
-    merged_df = transposed_appdate
-    merged_df = merged_df.merge(transposed_scorename, on=key, how='left')
-    merged_df = merged_df.merge(transposed_scoredesc, on=key, how='left')
-    merged_df = merged_df.merge(transposed_sgrpdesc, on=key, how='left')
-    merged_df = merged_df.merge(transposed_scoretype, on=key, how='left')
-    merged_df = merged_df.merge(transposed_sicdesc, on=key, how='left')
-    merged_df = merged_df.merge(transposed_sicgrpdesc, on=key, how='left')
-    merged_df = merged_df.merge(transposed_sictype, on=key, how='left')
-    merged_df = merged_df.merge(transposed_carmins, on=key, how='left')
-
-    # Reformat dataframe
-    result_df = reformat(merged_df)
+def transpose_data(df, key, var, prefix):
+    # Select only the key and variable columns, similar to the "keep" statement in SAS
+    temp_df = df[[key, var]].copy()
     
-    return result_df
+    # Pivot the data, similar to the SAS PROC TRANSPOSE with BY key
+    # We use pivot_table with an aggregation to handle duplicate values.
+    transposed = temp_df.pivot_table(index=key, columns=var, aggfunc='first').reset_index()
+    
+    # Rename the columns to match the SAS prefix approach
+    transposed.columns = [f"{prefix}_{col}" if col != key else col for col in transposed.columns]
+    
+    return transposed
